@@ -542,7 +542,7 @@ function resetPengeluaranForm() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. DATA BARANG & UNDUH BARCODE PERMANEN (QR LANGSUNG KASIR & PNG BATANG)
+// 3. DATA BARANG, QR MASTER (KESELURUHAN DATA BARANG) & BARCODE PERMANEN
 // ---------------------------------------------------------------------------
 function toggleSelectAllBarang(source) {
   document.querySelectorAll('.barang-checkbox').forEach(cb => { cb.checked = source.checked; });
@@ -673,6 +673,77 @@ function renderBarangTable() {
   });
 }
 
+// MODAL QR KESELURUHAN DATA BARANG (MASTER)
+function bukaModalQrMasterBarang() {
+  const storeId = tokoProfile.storeId || "aplikasi-kasir-utama";
+  const baseUrl = window.location.origin + window.location.pathname;
+  const masterUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&mode=all`;
+
+  document.getElementById('qrMasterModalTitle').innerText = tokoProfile.nama || "Aplikasi Kasir";
+  document.getElementById('qrMasterItemCount').innerText = `Total Barang Terdaftar: ${barangList.length} Item`;
+  document.getElementById('qrMasterUrlInput').value = masterUrl;
+
+  const container = document.getElementById('qrMasterCanvasContainer');
+  container.innerHTML = "";
+
+  if (typeof QRCode !== "undefined") {
+    new QRCode(container, {
+      text: masterUrl,
+      width: 210,
+      height: 210,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  document.getElementById('qrMasterModalOverlay').classList.remove('hidden');
+}
+
+function closeQrMasterModal() {
+  document.getElementById('qrMasterModalOverlay').classList.add('hidden');
+}
+
+function downloadQrMasterPng() {
+  const container = document.getElementById('qrMasterCanvasContainer');
+  const canvas = container.querySelector('canvas');
+  const img = container.querySelector('img');
+  
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = 300;
+  exportCanvas.height = 360;
+  const ctx = exportCanvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").substring(0, 30), 150, 28);
+
+  ctx.fillStyle = '#475569';
+  ctx.font = '12px sans-serif';
+  ctx.fillText(`Total Barang: ${barangList.length} Item`, 150, 48);
+
+  if (canvas) {
+    ctx.drawImage(canvas, 45, 60, 210, 210);
+  } else if (img) {
+    ctx.drawImage(img, 45, 60, 210, 210);
+  }
+
+  ctx.fillStyle = '#16a34a';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillText('QR Keseluruhan Data Barang', 150, 292);
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px sans-serif';
+  ctx.fillText('Scan untuk Membuka Aplikasi & Stok', 150, 312);
+
+  const link = document.createElement('a');
+  link.download = `QR_Master_DataBarang_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
+  link.href = exportCanvas.toDataURL('image/png');
+  link.click();
+}
+
 function bukaModalQrKasir(kode, nama = "") {
   if (!kode) return;
   const barang = barangList.find(b => b.kode === kode);
@@ -686,7 +757,7 @@ function bukaModalQrKasir(kode, nama = "") {
   const directKasirUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&scan=${encodeURIComponent(kode)}`;
 
   document.getElementById('qrModalItemTitle').innerText = namaTampil;
-  document.getElementById('qrModalItemCode').innerText = `Kode Barcode Permanen: ${kode} (ID Toko: ${storeId})`;
+  document.getElementById('qrModalItemCode').innerText = `Kode Barcode Permanen: ${kode}`;
 
   const container = document.getElementById('qrModalCanvasContainer');
   container.innerHTML = "";
@@ -2119,7 +2190,7 @@ function formatNumber(num) {
 function toggleAdminMenuDropdown(e) {
   if(e) e.stopPropagation();
   const dropdown = document.getElementById('adminMenuDropdown');
-  if(dropdown) dropdown.classList.toggle('hidden');
+  if(dropdown) dropdown.classList.add('hidden');
 }
 
 window.addEventListener('click', function(e) {
