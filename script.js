@@ -1849,7 +1849,7 @@ async function exportDataApp() {
   };
   const jsonString = JSON.stringify(dataToExport, null, 2);
   const now = new Date();
-  const suggestedName = `backup_sembako_${now.getDate()}-${now.getMonth()+1}-${now.getFullYear()}.json`;
+  const suggestedName = `backup_data kasir_${now.getDate()}-${now.getMonth()+1}-${now.getFullYear()}.json`;
 
   if ('showSaveFilePicker' in window) {
     try {
