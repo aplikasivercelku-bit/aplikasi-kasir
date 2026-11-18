@@ -403,6 +403,9 @@ function showTab(tabId) {
       try { html5QrCode.stop(); } catch(e){}
     }
   }
+  if(tabId === 'transaksiTab') {
+    resetFilterTransaksi();
+  }
   if(tabId === 'laporanTab') {
     const tbody = document.getElementById('laporanTbody');
     if(tbody && !tbody.hasAttribute('data-filtered')) {
