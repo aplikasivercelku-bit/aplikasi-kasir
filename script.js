@@ -101,8 +101,9 @@ function aktifkanTampilanHalamanBarcodeSaja() {
 }
 
 function getKasirBarcodeUrl() {
-  const baseUrl = window.location.origin + window.location.pathname;
-  return `${baseUrl}?mode=kasir`;
+  // Dipersingkat agar string data QR tidak terlalu padat dan mudah dibaca Google Lens / Scanner HP
+  const loc = window.location;
+  return `${loc.origin}${loc.pathname}?mode=kasir`;
 }
 
 function bukaModalQrMaster() {
@@ -120,7 +121,7 @@ function bukaModalQrMaster() {
   if (qrContainer) {
     qrContainer.innerHTML = "";
     
-    // Perbaikan tata letak agar rapi di HP dan tidak terpotong menempel garis
+    // Tata letak rapi, responsif, dan tidak terpotong di tepi kotak
     qrContainer.style.display = "flex";
     qrContainer.style.justifyContent = "center";
     qrContainer.style.alignItems = "center";
@@ -129,13 +130,14 @@ function bukaModalQrMaster() {
     qrContainer.style.boxSizing = "border-box";
     qrContainer.style.overflow = "hidden";
 
+    // Menggunakan CorrectLevel M agar kerapatan titik QR lebih longgar dan mudah di-scan Google Lens
     new QRCode(qrContainer, {
       text: targetUrl,
-      width: 170,
-      height: 170,
+      width: 180,
+      height: 180,
       colorDark: "#000000",
       colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
+      correctLevel: QRCode.CorrectLevel.M
     });
 
     setTimeout(() => {
@@ -1609,8 +1611,8 @@ function initScannerCamera() {
     config, 
     (decodedText) => {
       const currentTime = Date.now();
-      // Jeda pembatasan scan duplikat dalam 2 detik agar tidak spam
-      if (decodedText === lastScannedCode && (currentTime - lastScannedTime < 2000)) return;
+      // Jeda pembatasan scan duplikat dalam 1.5 detik agar bisa scan berulang kali secara responsif
+      if (decodedText === lastScannedCode && (currentTime - lastScannedTime < 1500)) return;
       lastScannedCode = decodedText;
       lastScannedTime = currentTime;
 
@@ -1624,7 +1626,7 @@ function initScannerCamera() {
           statusEl.style.color = '#64748b';
           statusEl.style.fontWeight = 'normal';
           statusEl.innerText = 'Mengarahkan kamera ke barcode...';
-        }, 2500);
+        }, 2000);
       }
       
       cariProdukByBarcodeScanner(decodedText);
@@ -1632,7 +1634,7 @@ function initScannerCamera() {
         if (selectedProdukAktif) {
           tambahKeKeranjangScanner();
         }
-      }, 100);
+      }, 50);
     },
     (errorMessage) => {}
   ).catch(err => {
@@ -1658,7 +1660,7 @@ function scanImageFromFile(e) {
         if (selectedProdukAktif) {
           tambahKeKeranjangScanner();
         }
-      }, 100);
+      }, 50);
     })
     .catch(err => {
       statusEl.innerText = "❌ Gagal mendeteksi barcode dari gambar.";
@@ -1668,7 +1670,6 @@ function scanImageFromFile(e) {
 function cariProdukByBarcodeScanner(code) {
   const cleanRaw = code.trim();
   
-  // Jika kode berupa URL Kasir atau QR Master Toko, biarkan discan tanpa memicu reload paksa berulang
   if (cleanRaw.includes('mode=kasir') || cleanRaw.includes('?sto') || cleanRaw === "APP-KASIR-MASTER-BARANG") {
     const statusEl = document.getElementById('scannerStatus');
     if(statusEl) {
@@ -2878,7 +2879,7 @@ function saveProfilToko(e) {
   e.preventDefault();
   tokoProfile.nama = document.getElementById('tokoNama').value;
   tokoProfile.telp = document.getElementById('tokoTelp').value;
-  tokoProfile.alamat = document.getElementById('tokoAlamat').value;
+  tokoProfile.alamat = document.encodeURIComponent ? document.getElementById('tokoAlamat').value : document.getElementById('tokoAlamat').value;
   tokoProfile.notes = document.getElementById('tokoNotes').value;
   if(tempLogoBase64) tokoProfile.logo = tempLogoBase64;
 
