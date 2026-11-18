@@ -32,19 +32,27 @@ let tempLogoBase64 = '';
 
 let currentLightboxBarcode = "";
 let currentLightboxTitle = "";
+let isBarcodeModeKasirOnly = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
-  renderMasterBarangBarcode();
   
-  const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
-  if (isSessionLoggedIn === 'true') {
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('appContainer').classList.remove('hidden');
-    showTab('berandaTab');
+  const urlParams = new URLSearchParams(window.location.search);
+  const modeParam = urlParams.get('mode') || (window.location.search.includes('sto') ? 'kasir' : '');
+
+  if (modeParam === 'kasir') {
+    isBarcodeModeKasirOnly = true;
+    aktifkanTampilanHalamanBarcodeSaja();
   } else {
-    document.getElementById('loginPage').classList.remove('hidden');
-    document.getElementById('appContainer').classList.add('hidden');
+    const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
+    if (isSessionLoggedIn === 'true') {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('appContainer').classList.remove('hidden');
+      showTab('berandaTab');
+    } else {
+      document.getElementById('loginPage').classList.remove('hidden');
+      document.getElementById('appContainer').classList.add('hidden');
+    }
   }
 
   renderBarangTable();
@@ -69,48 +77,128 @@ document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('trxTglSampai')) document.getElementById('trxTglSampai').value = '';
 });
 
-function renderMasterBarangBarcode() {
-  const svgEl = document.getElementById('masterBarangBarcodeSvg');
-  if(svgEl) {
-    try {
-      JsBarcode("#masterBarangBarcodeSvg", "APP-KASIR-MASTER-BARANG", {
-        format: "CODE128",
-        lineColor: "#000000",
-        width: 2.5,
-        height: 70,
-        displayValue: true,
-        fontSize: 16,
-        margin: 10
-      });
-    } catch(e) {}
-  }
+function aktifkanTampilanHalamanBarcodeSaja() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('appContainer').classList.remove('hidden');
+
+  // Sembunyikan menu manajemen lain pada sidebar sesuai spesifikasi QR[cite: 6, 7]
+  document.querySelectorAll('.sidebar-menu .nav-btn').forEach(btn => {
+    const tab = btn.getAttribute('data-tab');
+    if (tab !== 'kasirTab' && tab !== 'transaksiTab' && tab !== 'kasbonTab') {
+      btn.classList.add('hidden');
+    }
+  });
+
+  // Sembunyikan tombol Edit di Data Transaksi versi barcode[cite: 5]
+  const styleBarcodeOnly = document.createElement('style');
+  styleBarcodeOnly.id = 'styleBarcodeModeOnly';
+  styleBarcodeOnly.innerHTML = `
+    #riwayatTransaksiTbody .btn-edit-trx-admin {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(styleBarcodeOnly);
+
+  showTab('kasirTab');
 }
 
-function downloadMasterBarangBarcodePNG() {
-  const svgEl = document.getElementById('masterBarangBarcodeSvg');
-  if(!svgEl) return;
-  const xml = new XMLSerializer().serializeToString(svgEl);
-  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
-  
-  const img = new Image();
-  img.onload = function() {
+function getKasirBarcodeUrl() {
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?mode=kasir`;
+}
+
+function bukaModalQrMaster() {
+  const overlay = document.getElementById('qrMasterModalOverlay');
+  if (!overlay) return;
+
+  const storeTitleEl = document.getElementById('qrCardStoreName');
+  const urlInputEl = document.getElementById('qrCardAppUrl');
+  const qrContainer = document.getElementById('qrMasterContainer');
+
+  const targetUrl = getKasirBarcodeUrl();
+  if (storeTitleEl) storeTitleEl.innerText = tokoProfile.nama || 'APLIKASI KASIR';
+  if (urlInputEl) urlInputEl.value = targetUrl;
+
+  if (qrContainer) {
+    qrContainer.innerHTML = "";
+    new QRCode(qrContainer, {
+      text: targetUrl,
+      width: 210,
+      height: 210,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  overlay.classList.remove('hidden');
+}
+
+function tutupModalQrMaster(e) {
+  if (e && e.target.id !== 'qrMasterModalOverlay') return;
+  const overlay = document.getElementById('qrMasterModalOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function unduhKartuQrMasterPNG() {
+  const qrContainer = document.getElementById('qrMasterContainer');
+  if (!qrContainer) return;
+
+  const qrCanvas = qrContainer.querySelector('canvas');
+  const qrImg = qrContainer.querySelector('img');
+
+  const drawCardAndDownload = (imgSource) => {
     const canvas = document.createElement('canvas');
-    canvas.width = img.width || 350;
-    canvas.height = img.height || 120;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
+    canvas.width = 420;
+    canvas.height = 500;
+
+    // Background putih kartu
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-    
+
+    // Border kartu halus
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+    // Nama Toko di bagian atas
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 24px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").toUpperCase(), canvas.width / 2, 62);
+
+    // Kotak Bingkai QR Code
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(75, 90, 270, 270);
+
+    // Gambar QR Code
+    ctx.drawImage(imgSource, 95, 110, 230, 230);
+
+    // Kotak Keterangan Bawah
+    ctx.fillStyle = "#ecfdf5";
+    ctx.fillRect(40, 385, 340, 75);
+    ctx.fillStyle = "#16a34a";
+    ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Scan QR untuk membuka halaman", canvas.width / 2, 416);
+    ctx.fillText("Transaksi Kasir tanpa login", canvas.width / 2, 438);
+
     const a = document.createElement('a');
-    a.download = `Barcode_Master_Data_Barang.png`;
+    a.download = `Kartu_QR_Kasir_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
     a.href = canvas.toDataURL('image/png');
     document.body.appendChild(a);
     a.click();
     a.remove();
   };
-  img.src = url;
+
+  if (qrCanvas) {
+    drawCardAndDownload(qrCanvas);
+  } else if (qrImg) {
+    const img = new Image();
+    img.onload = () => drawCardAndDownload(img);
+    img.src = qrImg.src;
+  }
 }
 
 function handleLogin(e) {
@@ -152,10 +240,7 @@ function showTab(tabId) {
     updateDashboardStats();
     updateFinancialSummary();
   }
-  if(tabId === 'barangTab') {
-    populateBarangDatalist();
-    renderMasterBarangBarcode();
-  }
+  if(tabId === 'barangTab') populateBarangDatalist();
   if(tabId === 'kasirTab') {
     populateKasbonDatalist();
     if(!document.getElementById('transaksiEditIndex').value) {
@@ -776,6 +861,7 @@ function tutupLightboxJikaKlikLuar(event) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     tutupLightboxBarcode();
+    tutupModalQrMaster();
   }
 });
 
@@ -1376,7 +1462,7 @@ function renderRiwayatTransaksiFiltered() {
         <td>Rp ${formatNumber(t.total)}</td>
         <td class="no-print">
           <button class="btn btn-secondary btn-sm" onclick="bukaModalCetakNota(${originalIndex})">🖨️ Cetak</button>
-          <button class="btn btn-primary btn-sm" onclick="editTransaksi(${originalIndex})">✏️ Edit</button>
+          <button class="btn btn-primary btn-sm btn-edit-trx-admin" onclick="editTransaksi(${originalIndex})">✏️ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteTransaksi(${originalIndex})">🗑️ Hapus</button>
         </td>
       </tr>
@@ -1567,35 +1653,7 @@ function scanImageFromFile(e) {
 }
 
 function cariProdukByBarcodeScanner(code) {
-  const cleanRaw = code.trim();
-  if (cleanRaw === "APP-KASIR-MASTER-BARANG") {
-    sessionStorage.setItem('sembako_logged_in', 'true');
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('appContainer').classList.remove('hidden');
-    
-    const belumLunas = kasbonList.find(k => {
-      const trx = transaksiList.filter(t => t.namaKasbon && t.namaKasbon.toLowerCase() === k.nama.toLowerCase());
-      const totalBelanja = trx.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
-      const sudahDibayar = trx.reduce((sum, t) => {
-        let subSudah = 0;
-        if (t.isLunasKasbon === true) subSudah += (parseFloat(t.total) || 0);
-        if (t.items && Array.isArray(t.items)) {
-          t.items.forEach(i => { if (i.isLunasItem === true) subSudah += (parseFloat(i.subtotal) || 0); });
-        }
-        return sum + subSudah;
-      }, 0);
-      return (totalBelanja - sudahDibayar) > 0;
-    });
-
-    if (belumLunas) {
-      showTab('kasbonTab');
-    } else {
-      showTab('kasirTab');
-    }
-    return;
-  }
-
-  const cleanCode = cleanRaw.toLowerCase();
+  const cleanCode = code.trim().toLowerCase();
   const infoCard = document.getElementById('productDetailInfo');
   const notFoundText = document.getElementById('productNotFound');
 
