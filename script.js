@@ -121,14 +121,32 @@ function bukaModalQrMaster() {
 
   if (qrContainer) {
     qrContainer.innerHTML = "";
+    
+    // Mengatur wrapper agar flex dan centerview agar tidak terpotong
+    qrContainer.style.display = "flex";
+    qrContainer.style.justifyContent = "center";
+    qrContainer.style.alignItems = "center";
+    qrContainer.style.width = "100%";
+    qrContainer.style.overflow = "hidden";
+
     new QRCode(qrContainer, {
       text: targetUrl,
-      width: 210,
-      height: 210,
+      width: 180,  // Dikecilkan sedikit agar pas dan tidak mentok / terpotong
+      height: 180,
       colorDark: "#000000",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
     });
+
+    // Memastikan elemen img/canvas hasil generate otomatis responsif di dalam kontainer
+    setTimeout(() => {
+      const generatedEl = qrContainer.querySelector('img, canvas');
+      if (generatedEl) {
+        generatedEl.style.maxWidth = "100%";
+        generatedEl.style.height = "auto";
+        generatedEl.style.display = "block";
+      }
+    }, 50);
   }
 
   overlay.classList.remove('hidden');
