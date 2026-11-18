@@ -40,7 +40,6 @@
   <!-- APLIKASI UTAMA (SETELAH LOGIN) -->
   <div id="appContainer" class="app-container hidden">
     <!-- SIDEBAR -->
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="appSidebar">
       <div class="sidebar-header">
         <img id="navBrandImg" src="" alt="" class="sidebar-logo hidden">
@@ -57,7 +56,7 @@
         <button class="nav-btn" data-tab="laporanTab" onclick="showTab('laporanTab')">📊 Laporan & Cetak</button>
         <button class="nav-btn" data-tab="panduanTab" onclick="showTab('panduanTab')">📖 Panduan Aplikasi</button>
         
-        <!-- BAGIAN "HALO, OLAN" & TOMBOL TITIK 3 DIPINDAHKAN DI SINI (DI BAWAH PANDUAN APLIKASI) -->
+        <!-- BAGIAN "HALO, ADMIN" & TOMBOL TITIK 3 -->
         <div class="sidebar-user-section">
           <div class="user-info">
             <img id="navUserAvatarImg" src="" alt="" class="avatar-small hidden">
@@ -244,6 +243,19 @@
 
       <!-- TAB 3: DATA BARANG STOK -->
       <section id="barangTab" class="tab-content">
+        <!-- MASTER BARCODE KESELURUHAN DATA BARANG (SESUAI SPESIFIKASI) -->
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1;">
+          <h2 style="font-size: 1.1rem; margin-bottom: 8px; color: #0f172a;">🏷️ Barcode Master Keseluruhan Data Barang</h2>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Scan barcode di bawah menggunakan Google Lens, Kamera HP, atau aplikasi Scan Barcode untuk langsung mengakses halaman Transaksi Kasir[cite: 6].</p>
+          <div style="text-align: center; background: #fff; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+            <svg id="masterBarangBarcodeSvg" style="max-width: 280px; height: 80px; display: block; margin: 0 auto;"></svg>
+            <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-success btn-sm" onclick="downloadMasterBarangBarcodePNG()">📥 Unduh Barcode Master PNG</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="salinNomorBarcode('APP-KASIR-MASTER-BARANG')">📋 Salin Teks Barcode</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card collapsible-card collapsed" id="barangFormCard">
           <div class="card-header" onclick="toggleForm('barangFormCard', 'barangToggleIcon')">
             <h2>➕ Tambah Data Barang Stok (Dari Data Pengeluaran)</h2>
@@ -434,8 +446,8 @@
       <section id="scannerTab" class="tab-content">
         <div class="scanner-container">
           <div class="scanner-header">
-            <h2>📷 Scanner Barcode Barang</h2>
-            <p>Gunakan kamera perangkat, unggah gambar, atau ketik/salin barcode secara manual.</p>
+            <h2>📷 Scanner Barcode Barang / Master Akses</h2>
+            <p>Scan barcode master untuk masuk kasir otomatis, atau scan barcode produk untuk belanja.</p>
           </div>
 
           <div class="card scanner-box">
@@ -745,33 +757,10 @@
         <div class="card">
           <h2 id="panduanTitleHeader" style="font-size: 1.2rem; margin-bottom: 15px; color: #0f172a;">📖 Panduan Penggunaan Aplikasi KASIR</h2>
           <div style="font-size: 0.9rem; line-height: 1.6; color: #334155; display: flex; flex-direction: column; gap: 12px;">
-            <div><b>1. Sistem Notifikasi Otomatis (Dua Jenis Peringatan di Topbar):</b> Aplikasi ini dilengkapi dua tombol lonceng/notifikasi interaktif di bagian pojok kanan atas yang memperbarui status secara otomatis setiap kali ada perubahan data:
-              <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li><b>Peringatan Stok & Kadaluarsa (Lonceng Kuning / 🔔):</b> Otomatis mendeteksi stok barang menipis atau masa aktif/expired yang mendekati batas (waktunya) atau sudah kadaluarsa. Klik pada item notifikasi akan langsung mengarahkan Anda ke Data Barang terkait.</li>
-                <li><b>Peringatan Piutang Belum Lunas (Ikon Dokumen / 📑):</b> Otomatis melacak pelanggan yang memiliki sisa tagihan kasbon/piutang yang belum dilunasi.</li>
-              </ul>
-            </div>
-            <div><b>2. Penanganan Aplikasi *Stuck* / *Error* & Cache Browser Penuh:</b> 
-              Jika aplikasi terasa lambat, *stuck* (macet), atau mengalami *error* akibat data memori penjelajahan (*cache*) browser penuh:
-              <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li>Segera lakukan pencadangan data dengan klik tombol <b>"Unduh File Cadangan (Backup JSON)"</b> di menu <i>Profil & Toko</i> agar data aman.</li>
-                <li>Bersihkan atau hapus data penjelajahan/cache browser Anda melalui pengaturan browser (Settings &gt; Clear browsing data).</li>
-                <li>Setelah itu, buka kembali aplikasi dan lakukan *Restore* (Pulihkan Data) menggunakan file cadangan JSON yang telah diunduh sebelumnya.</li>
-              </ul>
-            </div>
-            <div><b>3. Logika Penghapusan Data & Pengembalian Stok Otomatis:</b>
-              <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li><b>Penghapusan Kasbon / Transaksi Belum Lunas:</b> Jika data kasbon atau transaksi yang dihapus berstatus <b>Belum Lunas</b>, maka stok barang akan <b>dikembalikan otomatis</b> ke database stok toko karena barang tersebut batal terjual/belum terbayar.</li>
-                <li><b>Penghapusan Kasbon / Transaksi Lunas:</b> Jika data kasbon atau transaksi yang dihapus berstatus <b>Lunas</b> (atau tunai murni), maka stok barang <b>tidak dikembalikan</b> karena barang secara fisik sudah sah terjual.</li>
-                <li><b>Sinkronisasi Profil Kasbon:</b> Jika seluruh transaksi dari suatu nama kasbon dihapus dari riwayat transaksi atau jika profil kasbon dihapus dari menu Kasbon, data terkait akan otomatis disinkronkan.</li>
-              </ul>
-            </div>
-            <div><b>4. Data Pengeluaran & Barcode:</b> Input pembelian modal atau barang baru beserta harga modal, harga jual, dan kode barcodenya.</div>
-            <div><b>5. Data Barang:</b> Masukkan stok barang berdasarkan data pengeluaran yang telah diinput sebelumnya.</div>
-            <div><b>6. Transaksi Kasir:</b> Pilih barang, masukkan jumlah, dan selesaikan pembayaran atau catat kasbon/piutang.</div>
-            <div><b>7. Scanner Barcode:</b> Gunakan kamera langsung, unggah gambar barcode, atau ketik/salin barcode secara manual.</div>
-            <div><b>8. Data Transaksi & Laporan:</b> Lihat riwayat penjualan, cetak rekap, atau cetak nota struk thermal lengkap dengan status kasbon.</div>
-            <div><b>9. Profil & Toko:</b> Ubah informasi nama toko, alamat, telepon, logo perusahaan, serta foto profil admin melalui menu titik 3 di sudut kiri bawah.</div>
+            <div><b>1. Fitur Master Barcode Keseluruhan Barang:</b> Pada menu <i>Data Barang</i>, tersedia satu Barcode Master yang mewakili keseluruhan data barang. Jika di-scan menggunakan Google Lens atau kamera HP, Anda akan langsung diarahkan ke halaman <i>Transaksi Kasir</i> tanpa perlu login[cite: 6].</div>
+            <div><b>2. Alur Navigasi Setelah Scan Barcode Master:</b> Urutan setelah scan: 1. Transaksi Kasir, 2. Data Transaksi, 3. Data Kasbon[cite: 6]. Jika terdapat kasbon belum lunas, otomatis diarahkan ke menu Kasbon untuk memantau status piutang[cite: 6].</div>
+            <div><b>3. Sinkronisasi Stok Real-time:</b> Perubahan stok yang dilakukan di panel admin atau melalui transaksi scanner akan otomatis tersinkron setelah halaman disegarkan (*refresh*)[cite: 5].</div>
+            <div><b>4. Sistem Notifikasi Otomatis & Keamanan Data:</b> Gunakan fitur Backup/Restore JSON di menu profil untuk mengamankan data secara berkala.</div>
           </div>
         </div>
       </section>
@@ -849,10 +838,6 @@
         <!-- BACKUP & RESTORE DATA -->
         <div class="card" style="margin-top: 20px;">
           <h2 style="font-size: 1.1rem; margin-bottom: 12px; color: #0f172a;">💾 Pencadangan & Pemulihan Data (Backup & Restore)</h2>
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Amankan seluruh data transaksi, stok barang, kasbon, dan pengaturan toko Anda.</p>
-          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; color: #b45309;">
-            ⚠️ <b>Tips Atasi Error / Stuck:</b> Jika aplikasi macet atau penjelajahan browser penuh, segera klik <b>"Unduh File Cadangan"</b> di bawah ini. Setelah membersihkan data/cache browser, Anda dapat memulihkan data dengan mudah menggunakan tombol <b>"Pulihkan Data (Restore)"</b>.
-          </div>
           <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
             <button type="button" class="btn btn-success" onclick="exportDataApp()">📥 Unduh File Cadangan (Backup JSON)</button>
             <div style="display: flex; gap: 10px; align-items: center;">
