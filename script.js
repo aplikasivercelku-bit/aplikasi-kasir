@@ -64,7 +64,6 @@ function renderUniversalQRCode() {
   container.innerHTML = "";
   if(titleEl) titleEl.innerText = `QR ${tokoProfile.nama.toUpperCase()} (Keseluruhan Barang)`;
 
-  // Generate target URL langsung ke halaman kasir pembeli dengan parameter toko
   const targetUrl = window.location.origin + window.location.pathname + `?store=${encodeURIComponent(tokoProfile.nama)}&mode=kasir`;
   if(urlTextEl) urlTextEl.innerText = targetUrl;
 
