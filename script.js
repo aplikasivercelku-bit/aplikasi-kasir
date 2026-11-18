@@ -40,23 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const modeParam = urlParams.get('mode') || (window.location.search.includes('sto') ? 'kasir' : '');
 
-  // Prioritas utama: Cek apakah admin sudah login di localStorage
   const isLocalStorageLoggedIn = localStorage.getItem('sembako_logged_in');
 
   if (isLocalStorageLoggedIn === 'true') {
-    // Jika sudah login, tetap di dalam panel admin meskipun halaman di-refresh di HP
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     
-    // Jika diakses via scan QR kasir tapi sudah login admin, arahkan ke kasir, jika tidak ke beranda
     if (modeParam === 'kasir') {
       showTab('kasirTab');
     } else {
-      // Pertahankan tab terakhir atau default ke beranda
       showTab('berandaTab');
     }
   } else {
-    // Jika belum login sama sekali
     if (modeParam === 'kasir') {
       isBarcodeModeKasirOnly = true;
       aktifkanTampilanHalamanBarcodeSaja();
@@ -181,9 +176,11 @@ function unduhKartuQrMasterPNG() {
     canvas.width = 500;
     canvas.height = 680;
 
+    // Background luar abu-abu lembut
     ctx.fillStyle = "#f1f5f9";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Kartu Putih Utama dengan sudut melengkung
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
     ctx.roundRect(20, 20, canvas.width - 40, canvas.height - 40, 16);
@@ -192,6 +189,7 @@ function unduhKartuQrMasterPNG() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
+    // Icon Header Kotak Oranye (CS)
     ctx.fillStyle = "#ea580c";
     ctx.beginPath();
     ctx.roundRect(40, 40, 50, 50, 10);
@@ -202,6 +200,7 @@ function unduhKartuQrMasterPNG() {
     ctx.textBaseline = "middle";
     ctx.fillText("CS", 65, 65);
 
+    // Header Title & Subtitle
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = "#0f172a";
@@ -212,6 +211,7 @@ function unduhKartuQrMasterPNG() {
     ctx.font = "12px 'Segoe UI', Arial, sans-serif";
     ctx.fillText("Pesan Cepat Tanpa Antre", 105, 83);
 
+    // Lencana SCAN ORDER Kanan Atas
     ctx.fillStyle = "#fff1f2";
     ctx.beginPath();
     ctx.roundRect(355, 42, 105, 36, 8);
@@ -225,6 +225,7 @@ function unduhKartuQrMasterPNG() {
     ctx.textBaseline = "middle";
     ctx.fillText("SCAN ORDER", 407, 60);
 
+    // Garis Pemisah Tipis
     ctx.strokeStyle = "#f1f5f9";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -232,15 +233,18 @@ function unduhKartuQrMasterPNG() {
     ctx.lineTo(460, 110);
     ctx.stroke();
 
+    // Nama Toko
     ctx.textAlign = "center";
     ctx.fillStyle = "#0f172a";
     ctx.font = "bold 22px 'Segoe UI', Arial, sans-serif";
     ctx.fillText((tokoProfile.nama || "CAFFE SANTAI HIHIHI").toUpperCase(), canvas.width / 2, 145);
 
+    // Subtitle / Nama Pemilik & Kontak
     ctx.fillStyle = "#64748b";
     ctx.font = "13px 'Segoe UI', Arial, sans-serif";
     ctx.fillText(`OLAN MAULANA • Telp: ${tokoProfile.telp || '087877611218'}`, canvas.width / 2, 168);
 
+    // Kotak Bingkai QR Code Putih di Tengah
     ctx.fillStyle = "#ffffff";
     ctx.strokeStyle = "#e2e8f0";
     ctx.lineWidth = 2;
@@ -249,8 +253,10 @@ function unduhKartuQrMasterPNG() {
     ctx.fill();
     ctx.stroke();
 
+    // Gambar QR Code
     ctx.drawImage(imgSource, 115, 215, 270, 270);
 
+    // Kotak Tagline Bawah QR
     ctx.fillStyle = "#f8fafc";
     ctx.beginPath();
     ctx.roundRect(40, 530, 420, 60, 10);
@@ -269,6 +275,7 @@ function unduhKartuQrMasterPNG() {
     ctx.font = "12px 'Segoe UI', Arial, sans-serif";
     ctx.fillText("Scan menggunakan Kamera HP / Google Lens untuk memesan", canvas.width / 2, 575);
 
+    // Footer Info (ID Toko & WhatsApp Pesanan)
     ctx.fillStyle = "#94a3b8";
     ctx.font = "11px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "left";
