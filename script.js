@@ -2309,7 +2309,7 @@ function importDataApp() {
   reader.onload = function(e) {
     const data = JSON.parse(e.target.result);
     if(data.barangList) barangList = data.barangList;
-    if(data.pengeluaranList) pengeluaranList = data.pengeluuranList;
+    if(data.pengeluaranList) pengeluaranList = data.pengeluaranList;
     if(data.transaksiList) transaksiList = data.transaksiList;
     if(data.kasbonList) kasbonList = data.kasbonList;
     if(data.adminCreds) adminCreds = data.adminCreds;
