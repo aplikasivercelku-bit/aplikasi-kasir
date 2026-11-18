@@ -180,7 +180,6 @@ function toggleAdminMenuDropdown(e) {
   }
 }
 
-// Tutup dropdown jika mengklik di luar area menu titik tiga
 window.addEventListener('click', function(e) {
   if(!e.target.closest('.admin-dropdown-wrapper')) {
     const dropdown = document.getElementById('adminMenuDropdown');
@@ -802,7 +801,8 @@ function bukaModalQrMasterBarang() {
   const masterUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&mode=all&toko=${encodeURIComponent(tokoProfile.nama || 'TOKO SEMBAKO')}&items=${encodeURIComponent(encodedItems)}`;
 
   document.getElementById('qrMasterModalTitle').innerText = tokoProfile.nama || "Aplikasi Kasir";
-  document.getElementById('qrMasterItemCount').innerText = `Total Barang Terdaftar: ${barangList.length} Item (Otomatis Sinkron ke HP)`;
+  // Teks jumlah item dihapus sesuai permintaan
+  document.getElementById('qrMasterItemCount').innerText = ""; 
   document.getElementById('qrMasterUrlInput').value = masterUrl;
 
   const container = document.getElementById('qrMasterCanvasContainer');
@@ -833,7 +833,7 @@ function downloadQrMasterPng() {
   
   const exportCanvas = document.createElement('canvas');
   exportCanvas.width = 320;
-  exportCanvas.height = 380;
+  exportCanvas.height = 360;
   const ctx = exportCanvas.getContext('2d');
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
@@ -843,22 +843,18 @@ function downloadQrMasterPng() {
   ctx.textAlign = 'center';
   ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").substring(0, 30), 160, 28);
 
-  ctx.fillStyle = '#475569';
-  ctx.font = '12px sans-serif';
-  ctx.fillText(`Total Barang: ${barangList.length} Item`, 160, 48);
-
   if (canvas) {
-    ctx.drawImage(canvas, 45, 60, 230, 230);
+    ctx.drawImage(canvas, 45, 50, 230, 230);
   } else if (img) {
-    ctx.drawImage(img, 45, 60, 230, 230);
+    ctx.drawImage(img, 45, 50, 230, 230);
   }
 
   ctx.fillStyle = '#16a34a';
   ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('QR Kasir & Sinkron Barang HP', 160, 312);
+  ctx.fillText('QR Kasir & Sinkron Barang HP', 160, 302);
   ctx.fillStyle = '#64748b';
   ctx.font = '10px sans-serif';
-  ctx.fillText('Scan untuk Buka Kasir & Data Barang', 160, 332);
+  ctx.fillText('Scan untuk Buka Kasir & Data Barang', 160, 322);
 
   const link = document.createElement('a');
   link.download = `QR_Kasir_Saja_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
