@@ -34,27 +34,106 @@ let currentLightboxTitle = "";
 let currentQrModalKode = "";
 let currentQrModalNama = "";
 
+// Helper Encode & Decode Data Barang ke URL QR agar HP otomatis sinkron dari Laptop
+function encodeDataToUrlParam(obj) {
+  try {
+    const jsonStr = JSON.stringify(obj);
+    return btoa(unescape(encodeURIComponent(jsonStr)));
+  } catch (e) {
+    return "";
+  }
+}
+
+function decodeDataFromUrlParam(base64Str) {
+  try {
+    const jsonStr = decodeURIComponent(escape(atob(base64Str)));
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
-// 1. INISIALISASI & RESTRIKSI MENU KASIR SAJA JIKA DIAKSES DARI QR MASTER / QR ITEM
+// 1. INISIALISASI & SINKRONISASI OTOMATIS DATA BARANG DARI QR KE HP
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-  loadProfilData();
-  
   const params = new URLSearchParams(window.location.search);
   const scanParam = params.get('scan') || params.get('barcode') || params.get('kode');
   const modeParam = params.get('mode');
   const storeParam = params.get('store');
+  const syncItemsParam = params.get('items'); // Data seluruh barang dari QR Master
+  const syncSingleItemParam = params.get('item'); // Data 1 barang dari QR Langsung Kasir
+  const tokoNameParam = params.get('toko');
+
+  // 1. Jika QR Master membawa data seluruh barang (?items=...), simpan otomatis ke HP!
+  if (syncItemsParam) {
+    const importedItems = decodeDataFromUrlParam(syncItemsParam);
+    if (Array.isArray(importedItems) && importedItems.length > 0) {
+      importedItems.forEach(imp => {
+        const existingIdx = barangList.findIndex(b => b.kode.toLowerCase() === imp.k.toLowerCase());
+        const mappedBarang = {
+          kode: imp.k,
+          nama: imp.n,
+          stok: parseInt(imp.s) || 0,
+          minStok: 3,
+          satuan: imp.u || 'Pcs',
+          expired: '',
+          minExpDays: 15,
+          modal: parseFloat(imp.m) || 0,
+          jual: parseFloat(imp.j) || 0
+        };
+        if (existingIdx !== -1) {
+          barangList[existingIdx] = { ...barangList[existingIdx], ...mappedBarang };
+        } else {
+          barangList.push(mappedBarang);
+        }
+      });
+      localStorage.setItem('sembako_barang', JSON.stringify(barangList));
+    }
+  }
+
+  // 2. Jika QR Langsung Kasir per item membawa data barang (?item=...), simpan otomatis ke HP!
+  if (syncSingleItemParam) {
+    const imp = decodeDataFromUrlParam(syncSingleItemParam);
+    if (imp && imp.k) {
+      const existingIdx = barangList.findIndex(b => b.kode.toLowerCase() === imp.k.toLowerCase());
+      const mappedBarang = {
+        kode: imp.k,
+        nama: imp.n,
+        stok: parseInt(imp.s) || 0,
+        minStok: 3,
+        satuan: imp.u || 'Pcs',
+        expired: '',
+        minExpDays: 15,
+        modal: parseFloat(imp.m) || 0,
+        jual: parseFloat(imp.j) || 0
+      };
+      if (existingIdx !== -1) {
+        barangList[existingIdx] = { ...barangList[existingIdx], ...mappedBarang };
+      } else {
+        barangList.push(mappedBarang);
+      }
+      localStorage.setItem('sembako_barang', JSON.stringify(barangList));
+    }
+  }
+
+  if (tokoNameParam) {
+    tokoProfile.nama = decodeURIComponent(tokoNameParam);
+    localStorage.setItem('sembako_toko', JSON.stringify(tokoProfile));
+  }
 
   if (storeParam && !tokoProfile.storeId) {
     tokoProfile.storeId = storeParam;
     saveDataToStorage();
   }
 
+  loadProfilData();
+
   // JIKA DIAKSES MELALUI SCAN BARCODE ATAU QR MASTER KESELURUHAN
   if (scanParam || modeParam === 'all') {
     sessionStorage.setItem('sembako_logged_in', 'true');
     if (modeParam === 'all') {
-      sessionStorage.setItem('sembako_kasir_only', 'true'); // HANYA MENU KASIR
+      sessionStorage.setItem('sembako_kasir_only', 'true');
     }
   }
 
@@ -83,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (scanParam) {
-      // Langsung Eksekusi Pemanggilan Barang saat QR Item di-scan HP
       bukaLangsungTransaksiDariBarcode(scanParam);
     } else if (!isKasirOnly) {
       showTab('berandaTab');
@@ -109,7 +187,7 @@ function aturMenuKasirSaja() {
       <button class="nav-btn" data-tab="kasbonTab" onclick="showTab('kasbonTab')">📑 Kasbon / Piutang</button>
       <div class="sidebar-user-section" style="margin-top: 20px;">
         <div class="user-info">
-          <span>🛒 Mode Kasir Utama</span>
+          <span>🛒 Mode Kasir HP (${barangList.length} Barang)</span>
         </div>
       </div>
     `;
@@ -566,7 +644,7 @@ function resetPengeluaranForm() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. DATA BARANG, QR MASTER & BARCODE PERMANEN
+// 3. DATA BARANG, QR MASTER & BARCODE PERMANEN (DENGAN SINKRONISASI DATA KE HP)
 // ---------------------------------------------------------------------------
 function toggleSelectAllBarang(source) {
   document.querySelectorAll('.barang-checkbox').forEach(cb => { cb.checked = source.checked; });
@@ -697,13 +775,26 @@ function renderBarangTable() {
   });
 }
 
+// QR MASTER KESELURUHAN: SEMATKAN SELURUH DATA BARANG AGAR HP OTOMATIS SINKRON!
 function bukaModalQrMasterBarang() {
   const storeId = tokoProfile.storeId || "aplikasi-kasir-utama";
   const baseUrl = window.location.origin + window.location.pathname;
-  const masterUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&mode=all`;
+
+  // Ringkas data barang agar QR tetap tajam dan terbaca HP
+  const compactItems = barangList.map(b => ({
+    k: b.kode,
+    n: b.nama,
+    s: b.stok,
+    u: b.satuan,
+    m: b.modal,
+    j: b.jual
+  }));
+  const encodedItems = encodeDataToUrlParam(compactItems);
+
+  const masterUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&mode=all&toko=${encodeURIComponent(tokoProfile.nama || 'TOKO SEMBAKO')}&items=${encodeURIComponent(encodedItems)}`;
 
   document.getElementById('qrMasterModalTitle').innerText = tokoProfile.nama || "Aplikasi Kasir";
-  document.getElementById('qrMasterItemCount').innerText = `Total Barang Terdaftar: ${barangList.length} Item`;
+  document.getElementById('qrMasterItemCount').innerText = `Total Barang Terdaftar: ${barangList.length} Item (Otomatis Sinkron ke HP)`;
   document.getElementById('qrMasterUrlInput').value = masterUrl;
 
   const container = document.getElementById('qrMasterCanvasContainer');
@@ -712,11 +803,11 @@ function bukaModalQrMasterBarang() {
   if (typeof QRCode !== "undefined") {
     new QRCode(container, {
       text: masterUrl,
-      width: 210,
-      height: 210,
+      width: 230,
+      height: 230,
       colorDark: "#000000",
       colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
+      correctLevel: QRCode.CorrectLevel.M
     });
   }
 
@@ -733,8 +824,8 @@ function downloadQrMasterPng() {
   const img = container.querySelector('img');
   
   const exportCanvas = document.createElement('canvas');
-  exportCanvas.width = 300;
-  exportCanvas.height = 360;
+  exportCanvas.width = 320;
+  exportCanvas.height = 380;
   const ctx = exportCanvas.getContext('2d');
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
@@ -742,24 +833,24 @@ function downloadQrMasterPng() {
   ctx.fillStyle = '#0f172a';
   ctx.font = 'bold 15px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").substring(0, 30), 150, 28);
+  ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").substring(0, 30), 160, 28);
 
   ctx.fillStyle = '#475569';
   ctx.font = '12px sans-serif';
-  ctx.fillText(`Total Barang: ${barangList.length} Item`, 150, 48);
+  ctx.fillText(`Total Barang: ${barangList.length} Item`, 160, 48);
 
   if (canvas) {
-    ctx.drawImage(canvas, 45, 60, 210, 210);
+    ctx.drawImage(canvas, 45, 60, 230, 230);
   } else if (img) {
-    ctx.drawImage(img, 45, 60, 210, 210);
+    ctx.drawImage(img, 45, 60, 230, 230);
   }
 
   ctx.fillStyle = '#16a34a';
   ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('QR Kasir & Transaksi Saja', 150, 292);
+  ctx.fillText('QR Kasir & Sinkron Barang HP', 160, 312);
   ctx.fillStyle = '#64748b';
   ctx.font = '10px sans-serif';
-  ctx.fillText('Scan untuk Langsung Menu Kasir', 150, 312);
+  ctx.fillText('Scan untuk Buka Kasir & Data Barang', 160, 332);
 
   const link = document.createElement('a');
   link.download = `QR_Kasir_Saja_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
@@ -767,6 +858,7 @@ function downloadQrMasterPng() {
   link.click();
 }
 
+// QR LANGSUNG KASIR PER ITEM: SEMATKAN DATA BARANGNYA AGAR HP OTOMATIS MENGENALI!
 function bukaModalQrKasir(kode, nama = "") {
   if (!kode) return;
   const barang = barangList.find(b => b.kode === kode);
@@ -777,7 +869,20 @@ function bukaModalQrKasir(kode, nama = "") {
   currentQrModalNama = namaTampil;
 
   const baseUrl = window.location.origin + window.location.pathname;
-  const directKasirUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&scan=${encodeURIComponent(kode)}`;
+  let itemParamStr = "";
+  if (barang) {
+    const compactSingle = {
+      k: barang.kode,
+      n: barang.nama,
+      s: barang.stok,
+      u: barang.satuan,
+      m: barang.modal,
+      j: barang.jual
+    };
+    itemParamStr = `&item=${encodeURIComponent(encodeDataToUrlParam(compactSingle))}`;
+  }
+
+  const directKasirUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&toko=${encodeURIComponent(tokoProfile.nama || 'TOKO SEMBAKO')}&scan=${encodeURIComponent(kode)}${itemParamStr}`;
 
   document.getElementById('qrModalItemTitle').innerText = namaTampil;
   document.getElementById('qrModalItemCode').innerText = `Kode Barcode Permanen: ${kode}`;
@@ -788,11 +893,11 @@ function bukaModalQrKasir(kode, nama = "") {
   if (typeof QRCode !== "undefined") {
     new QRCode(container, {
       text: directKasirUrl,
-      width: 210,
-      height: 210,
+      width: 220,
+      height: 220,
       colorDark: "#000000",
       colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
+      correctLevel: QRCode.CorrectLevel.M
     });
   }
 
@@ -809,8 +914,8 @@ function downloadQrKasirPng() {
   const img = container.querySelector('img');
   
   const exportCanvas = document.createElement('canvas');
-  exportCanvas.width = 280;
-  exportCanvas.height = 330;
+  exportCanvas.width = 290;
+  exportCanvas.height = 340;
   const ctx = exportCanvas.getContext('2d');
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
@@ -818,19 +923,19 @@ function downloadQrKasirPng() {
   ctx.fillStyle = '#0f172a';
   ctx.font = 'bold 14px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(currentQrModalNama.substring(0, 28), 140, 26);
+  ctx.fillText(currentQrModalNama.substring(0, 28), 145, 26);
 
   if (canvas) {
-    ctx.drawImage(canvas, 35, 42, 210, 210);
+    ctx.drawImage(canvas, 35, 42, 220, 220);
   } else if (img) {
-    ctx.drawImage(img, 35, 42, 210, 210);
+    ctx.drawImage(img, 35, 42, 220, 220);
   }
 
   ctx.fillStyle = '#475569';
   ctx.font = '12px monospace';
-  ctx.fillText(`Kode: ${currentQrModalKode}`, 140, 275);
+  ctx.fillText(`Kode: ${currentQrModalKode}`, 145, 285);
   ctx.font = '10px sans-serif';
-  ctx.fillText('Scan HP / Google Lens -> Transaksi Kasir', 140, 298);
+  ctx.fillText('Scan HP / Google Lens -> Transaksi Kasir', 145, 308);
 
   const link = document.createElement('a');
   link.download = `QR_Kasir_${currentQrModalNama.replace(/\s+/g, '_')}_${currentQrModalKode}.png`;
@@ -1369,7 +1474,6 @@ function prosesPembayaran() {
     window.history.replaceState({}, document.title, cleanUrl);
   }
 
-  // ALUR OTOMATIS: JIKA KASBON ARAHKAN KE HALAMAN KASBON, JIKA TIDAK ARAHKAN KE DATA TRANSAKSI
   if (isKasbon) {
     alert(`Transaksi Kasbon atas nama "${namaKasbonInput}" tercatat! Mengarahkan ke halaman Kasbon / Piutang untuk cek status...`);
     arahkanSetelahTransaksi(namaKasbonInput);
