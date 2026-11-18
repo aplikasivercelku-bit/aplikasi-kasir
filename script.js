@@ -34,7 +34,6 @@ let currentLightboxBarcode = "";
 let currentLightboxTitle = "";
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Ambil ulang data dari localStorage untuk memastikan data tidak hilang
   barangList = JSON.parse(localStorage.getItem('sembako_barang')) || [];
   pengeluaranList = JSON.parse(localStorage.getItem('sembako_pengeluaran')) || [];
   transaksiList = JSON.parse(localStorage.getItem('sembako_transaksi')) || [];
@@ -42,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadProfilData();
   
-  // Sinkronisasi otomatis data pengeluaran ke barang jika barangList kosong namun pengeluaran ada
   if (barangList.length === 0 && pengeluaranList.length > 0) {
     pengeluaranList.forEach(p => {
       barangList.push({
@@ -177,12 +175,6 @@ function showTab(tabId) {
   } else {
     if(html5QrCode) {
       try { html5QrCode.stop(); } catch(e){}
-    }
-  }
-  if(tabId === 'laporanTab') {
-    const tbody = document.getElementById('laporanTbody');
-    if(tbody && !tbody.hasAttribute('data-filtered')) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #777;">Silakan pilih tanggal atau klik 'Cetak Keseluruhan Transaksi'.</td></tr>`;
     }
   }
 
@@ -494,7 +486,7 @@ function renderBarangTable() {
         <td style="text-align: center;"><input type="checkbox" class="barang-checkbox" value="${origIdx}" style="width: 16px; height: 16px; cursor: pointer;"></td>
         <td>${idx + 1}</td>
         <td style="text-align: center;">
-          <div class="barcode-clickable" onclick="bukaLightboxBarcode('${safeCode}', '${safeName}')" title="Klik untuk memperbesar barcode">
+          <div class="barcode-clickable" onclick="bukaLightboxBarcode('${safeCode}', '${safeName}')" title="Klik untuk memperbesar & unduh barcode">
             <svg id="${svgIdBarang}" class="table-barcode-svg"></svg>
           </div>
         </td>
@@ -687,231 +679,7 @@ function downloadKasirBarcodePNG() {
   img.src = url;
 }
 
-function tambahItemKeranjang() {
-  const idx = document.getElementById('selectedKasirBarangIndex').value;
-  const qty = parseInt(document.getElementById('kasirQty').value) || 0;
-  if(idx === "" || idx === undefined || qty <= 0 || !barangList[idx]) {
-    alert("Pilih barang dan masukkan jumlah yang valid!");
-    return;
-  }
-
-  const barang = barangList[idx];
-  const existing = keranjangList.find(k => k.kode === barang.kode);
-  let currentQtyInCart = existing ? existing.qty : 0;
-
-  if(currentQtyInCart + qty > barang.stok) { 
-    alert("Stok fisik tidak mencukupi!"); 
-    return; 
-  }
-
-  if(existing) {
-    existing.qty += qty;
-    existing.subtotal = existing.qty * existing.hargaJual;
-  } else {
-    keranjangList.push({ kode: barang.kode, nama: barang.nama, hargaJual: barang.jual, qty, subtotal: barang.jual * qty });
-  }
-
-  renderKeranjang();
-  document.getElementById('kasirBarangInput').value = "";
-  document.getElementById('selectedKasirBarangIndex').value = "";
-  document.getElementById('kasirQty').value = 1;
-  document.getElementById('kasirInfoBarangDitemukan')?.classList.add('hidden');
-  document.getElementById('kasirBarcodePreviewArea')?.classList.add('hidden');
-  document.getElementById('kasirBarcodePlaceholder')?.classList.remove('hidden');
-  currentSelectedKasirBarcode = "";
-}
-
-function renderKeranjang() {
-  const tbody = document.getElementById('keranjangTbody');
-  if(!tbody) return;
-  tbody.innerHTML = "";
-  let total = 0;
-
-  if(keranjangList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #777;">Keranjang kosong.</td></tr>`;
-    if(document.getElementById('kasirTotalDisplay')) document.getElementById('kasirTotalDisplay').innerText = `Rp 0`;
-    return;
-  }
-
-  keranjangList.forEach((item, idx) => {
-    total += item.subtotal;
-    const svgId = `keranjangBarcode_${idx}`;
-    tbody.innerHTML += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${item.nama}</td>
-        <td><svg id="${svgId}" class="table-barcode-svg"></svg></td>
-        <td>Rp ${formatNumber(item.hargaJual)}</td>
-        <td>${item.qty}</td>
-        <td>Rp ${formatNumber(item.subtotal)}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="keranjangList.splice(${idx}, 1); renderKeranjang();">Hapus</button></td>
-      </tr>
-    `;
-    setTimeout(() => {
-      try { JsBarcode(`#${svgId}`, item.kode, { format: "CODE128", width: 1.5, height: 40, displayValue: true, fontSize: 12 }); } catch(err){}
-    }, 50);
-  });
-
-  if(document.getElementById('kasirTotalDisplay')) document.getElementById('kasirTotalDisplay').innerText = `Rp ${formatNumber(total)}`;
-  hitungKembalian();
-}
-
-function hitungKembalian() {
-  let total = keranjangList.reduce((sum, item) => sum + item.subtotal, 0);
-  let bayar = parseFloat(document.getElementById('kasirBayar').value) || 0;
-  let kembalian = bayar - total;
-  if(document.getElementById('kasirKembalianDisplay')) {
-    document.getElementById('kasirKembalianDisplay').innerText = kembalian >= 0 ? `Rp ${formatNumber(kembalian)}` : `Rp 0`;
-  }
-}
-
-function prosesPembayaran() {
-  if(keranjangList.length === 0) { alert("Keranjang kosong!"); return; }
-  let total = keranjangList.reduce((sum, item) => sum + item.subtotal, 0);
-  let bayar = parseFloat(document.getElementById('kasirBayar').value) || 0;
-  let namaKasbonInput = document.getElementById('kasirNamaKasbon').value.trim();
-
-  if(bayar < total && namaKasbonInput === "") { alert("Pembayaran kurang dan nama kasbon belum diisi!"); return; }
-
-  keranjangList.forEach(item => {
-    const b = barangList.find(x => x.kode === item.kode);
-    if(b) { b.stok -= item.qty; if(b.stok < 0) b.stok = 0; }
-  });
-
-  const now = new Date();
-  const transaksi = {
-    id: 'TRX-' + Date.now(),
-    tanggalRaw: now.toISOString().split('T')[0],
-    tanggal: now.toLocaleString('id-ID'),
-    namaKasbon: namaKasbonInput,
-    items: keranjangList.map(i => ({ ...i, isLunasItem: false })),
-    total, bayar, kembalian: bayar - total >= 0 ? bayar - total : 0,
-    isLunasKasbon: false
-  };
-
-  transaksiList.push(transaksi);
-
-  if (namaKasbonInput !== '') {
-    if (!kasbonList.some(k => k.nama.toLowerCase() === namaKasbonInput.toLowerCase())) {
-      kasbonList.push({ tanggal: now.toISOString().split('T')[0], nama: namaKasbonInput, telp: '', alamat: '', status: 'Belum Lunas' });
-    }
-  }
-
-  saveDataToStorage();
-  renderBarangTable();
-  renderRiwayatTransaksi();
-  renderKasbonTable();
-  populateKasbonDatalist();
-  resetKasirForm();
-  updateDashboardStats();
-  updateFinancialSummary();
-  updateNotifications();
-  updateKasbonNotifications();
-
-  alert("Transaksi berhasil disimpan dan stok tersinkronisasi!");
-  showTab('transaksiTab');
-}
-
-function resetKasirForm() {
-  keranjangList = [];
-  document.getElementById('transaksiEditIndex').value = "";
-  document.getElementById('kasirBarangInput').value = "";
-  document.getElementById('selectedKasirBarangIndex').value = "";
-  document.getElementById('kasirNamaKasbon').value = "";
-  document.getElementById('kasirBayar').value = "";
-  document.getElementById('kasirInfoBarangDitemukan')?.classList.add('hidden');
-  document.getElementById('kasirBarcodePreviewArea')?.classList.add('hidden');
-  document.getElementById('kasirBarcodePlaceholder')?.classList.remove('hidden');
-  currentSelectedKasirBarcode = "";
-  renderKeranjang();
-}
-
-// --- TRANSAKSI & KASBON ---
-function renderRiwayatTransaksi() {
-  currentFilteredTransaksi = [...transaksiList];
-  renderRiwayatTransaksiFiltered();
-}
-
-function renderRiwayatTransaksiFiltered() {
-  const tbody = document.getElementById('riwayatTransaksiTbody');
-  if(!tbody) return;
-  tbody.innerHTML = "";
-  if(currentFilteredTransaksi.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #777;">Tidak ada data transaksi.</td></tr>`;
-    return;
-  }
-  currentFilteredTransaksi.forEach((t, idx) => {
-    const originalIndex = transaksiList.indexOf(t);
-    const namaBarangUtama = t.items.map((i, iIdx) => `${iIdx + 1}. ${i.nama} (${i.qty}x)`).join('<br>');
-    tbody.innerHTML += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td><b>${namaBarangUtama}</b></td>
-        <td>${t.namaKasbon || '-'}</td>
-        <td>${t.tanggal}</td>
-        <td>${t.items.length} item</td>
-        <td>Rp ${formatNumber(t.total)}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteTransaksi(${originalIndex})">Hapus</button></td>
-      </tr>
-    `;
-  });
-}
-
-function deleteTransaksi(idx) {
-  if(confirm("Hapus transaksi ini?")) {
-    transaksiList.splice(idx, 1);
-    saveDataToStorage();
-    renderRiwayatTransaksi();
-    updateDashboardStats();
-    updateFinancialSummary();
-  }
-}
-
-function renderKasbonTable() {
-  const tbody = document.getElementById('kasbonTbody');
-  if(!tbody) return;
-  tbody.innerHTML = "";
-  if(kasbonList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #777;">Belum ada data kasbon.</td></tr>`;
-    return;
-  }
-  kasbonList.forEach((k, idx) => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${formatDateID(k.tanggal)}</td>
-        <td><b>${k.nama}</b></td>
-        <td>${k.status}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteKasbon(${idx})">Hapus</button></td>
-      </tr>
-    `;
-  });
-}
-
-function deleteKasbon(idx) {
-  if(confirm("Hapus kasbon ini?")) {
-    kasbonList.splice(idx, 1);
-    saveDataToStorage();
-    renderKasbonTable();
-    updateKasbonNotifications();
-  }
-}
-
-function populateKasbonDatalist() {
-  const datalist = document.getElementById('listKasbonNama');
-  if(!datalist) return;
-  datalist.innerHTML = '';
-  kasbonList.forEach(k => { datalist.innerHTML += `<option value="${k.nama}">`; });
-}
-
-function populateLaporanBarangSelect() {
-  const select = document.getElementById('laporanBarangSelect');
-  if(!select) return;
-  select.innerHTML = '<option value="">-- Semua Barang --</option>';
-  barangList.forEach(b => { select.innerHTML += `<option value="${b.nama}">${b.nama}</option>`; });
-}
-
-// --- LIGHTBOX BARCODE ---
+// --- LIGHTBOX BARCODE & DOWNLOAD BARANG ---
 function bukaLightboxBarcode(code, title = "Barcode Barang") {
   if (!code) return;
   currentLightboxBarcode = code;
@@ -923,10 +691,13 @@ function bukaLightboxBarcode(code, title = "Barcode Barang") {
     modal.id = 'barcodeLightboxModal';
     modal.className = 'lightbox-overlay';
     modal.innerHTML = `
-      <div class="lightbox-container" style="background:#fff; padding:20px; border-radius:8px; text-align:center;">
-        <h3 id="lightboxItemTitle">${title}</h3>
-        <svg id="lightboxBarcodeSvg"></svg>
-        <div style="margin-top:10px;"><button class="btn btn-secondary btn-sm" onclick="tutupLightboxBarcode()">Tutup</button></div>
+      <div class="lightbox-container" style="background:#fff; padding:20px; border-radius:8px; text-align:center; max-width:400px; margin:auto;">
+        <h3 id="lightboxItemTitle" style="font-size:1.1rem; margin-bottom:15px;">${title}</h3>
+        <div style="background:#fff; padding:10px;"><svg id="lightboxBarcodeSvg"></svg></div>
+        <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+          <button class="btn btn-success btn-sm" onclick="downloadLightboxBarcodePNG()">📥 Unduh Barcode PNG</button>
+          <button class="btn btn-secondary btn-sm" onclick="tutupLightboxBarcode()">Tutup</button>
+        </div>
       </div>
     `;
     document.body.appendChild(modal);
@@ -934,12 +705,35 @@ function bukaLightboxBarcode(code, title = "Barcode Barang") {
   document.getElementById('lightboxItemTitle').innerText = title;
   modal.classList.remove('hidden');
   try {
-    JsBarcode("#lightboxBarcodeSvg", code, { format: "CODE128", width: 3, height: 100, displayValue: true, fontSize: 16 });
+    JsBarcode("#lightboxBarcodeSvg", code, { format: "CODE128", width: 2.5, height: 90, displayValue: true, fontSize: 16 });
   } catch(e){}
 }
 
 function tutupLightboxBarcode() {
   document.getElementById('barcodeLightboxModal')?.classList.add('hidden');
+}
+
+function downloadLightboxBarcodePNG() {
+  if(!currentLightboxBarcode) return;
+  const svgEl = document.getElementById('lightboxBarcodeSvg');
+  if(!svgEl) return;
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width || 350; canvas.height = img.height || 120;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    const a = document.createElement('a');
+    a.download = `barcode_${currentLightboxTitle.replace(/\s+/g, '_')}_${currentLightboxBarcode}.png`;
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  img.src = url;
 }
 
 // --- UTILITIES ---
