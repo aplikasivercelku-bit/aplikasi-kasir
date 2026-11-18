@@ -318,10 +318,16 @@
               <h2>Tampilan Data Barang</h2>
               <input type="text" id="searchBarangInput" class="form-control" placeholder="Cari nama / kode barang.." oninput="renderBarangTable()" style="max-width: 250px;">
             </div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            
+            <!-- TOMBOL UNDUH QR KESELURUHAN DATA BARANG DI ATAS TABEL -->
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
               <button type="button" class="btn btn-danger" onclick="hapusBarangTerpilih()">🗑️ Hapus Terpilih</button>
-              <span style="font-size: 0.8rem; color: #475569; background: #e0e7ff; padding: 6px 12px; border-radius: 6px;">
-                💡 <b>Info Barcode:</b> Unduh <b>QR Langsung Kasir</b> atau <b>Barcode Batang</b> cukup 1x saja. Scan via Google Lens / Kamera HP langsung menuju Transaksi Kasir!
+              <button type="button" class="btn btn-success" onclick="bukaModalQrMasterBarang()">📱 QR Keseluruhan Data Barang (.png)</button>
+            </div>
+
+            <div style="width: 100%;">
+              <span style="font-size: 0.8rem; color: #475569; background: #e0e7ff; padding: 6px 12px; border-radius: 6px; display: block;">
+                💡 <b>Info Barcode:</b> Tombol hijau di atas untuk mengunduh QR keseluruhan data barang. Tabel di bawah adalah barcode satuan per item.
               </span>
             </div>
           </div>
@@ -727,15 +733,14 @@
           <div style="font-size: 0.9rem; line-height: 1.6; color: #334155; display: flex; flex-direction: column; gap: 12px;">
             <div><b>1. Barcode Permanen (1 Kali Download untuk Selamanya):</b>
               <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li>Di menu <b>Data Barang</b>, Anda dapat mengunduh <b>QR Langsung Kasir (PNG)</b> atau <b>Barcode Batang (PNG)</b>.</li>
-                <li>Barcode tersebut mengikat pada <b>Kode Barang Permanen</b> dan <b>ID Toko dari Pengaturan Data</b>. Jika suatu hari Anda memperbarui harga atau stok barang di Data Pengeluaran / Data Barang, barcode yang sudah dicetak tetap berfungsi normal tanpa perlu diunduh ulang.</li>
-                <li>Saat barcode di-scan memakai kamera HP, Google Lens, atau aplikasi barcode dari Play Store, link akan langsung terbuka di halaman <b>Transaksi Kasir</b> dengan nama barang sudah terdeteksi otomatis.</li>
+                <li>Di menu <b>Data Barang</b>, Anda dapat mengunduh <b>QR Keseluruhan Data Barang</b> di atas tabel atau <b>Barcode Batang</b> per item.</li>
+                <li>QR Keseluruhan merangkum seluruh stok dan data toko Anda dalam 1 QR Code.</li>
               </ul>
             </div>
             <div><b>2. Alur Transaksi Kasir & Kasbon Otomatis:</b>
               <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
                 <li><b>Tanpa Kasbon (Tunai):</b> Setelah menyelesaikan pembayaran, sistem langsung menampilkan hasilnya di halaman <b>Data Transaksi</b>.</li>
-                <li><b>Dengan Kasbon:</b> Jika kolom <i>Nama Kasbon</i> diisi, setelah transaksi selesai sistem langsung mengarahkan Anda ke halaman <b>Kasbon / Piutang</b> dan menyorot nama serta status piutang pelanggan tersebut. Data transaksi tetap tersimpan dan sinkron di halaman <b>Data Transaksi</b>.</li>
+                <li><b>Dengan Kasbon:</b> Jika kolom <i>Nama Kasbon</i> diisi, setelah transaksi selesai sistem langsung mengarahkan Anda ke halaman <b>Kasbon / Piutang</b> dan menyorot nama serta status piutang pelanggan tersebut.</li>
               </ul>
             </div>
           </div>
@@ -846,7 +851,7 @@
     </div>
   </div>
 
-  <!-- MODAL QR CODE PERMANEN LANGSUNG KASIR -->
+  <!-- MODAL QR CODE PERMANEN PER ITEM -->
   <div id="qrKasirModalOverlay" class="modal-overlay hidden" onclick="if(event.target.id==='qrKasirModalOverlay') closeQrKasirModal()">
     <div class="modal-card" style="text-align: center; max-width: 360px;">
       <h3 style="font-size: 1.05rem; margin-bottom: 4px; color: #0f172a;" id="qrModalItemTitle">Barcode Langsung Kasir</h3>
@@ -858,6 +863,26 @@
       <div style="display: flex; gap: 8px; justify-content: center;">
         <button type="button" class="btn btn-success" onclick="downloadQrKasirPng()">📥 Unduh QR PNG (1x Selamanya)</button>
         <button type="button" class="btn btn-secondary" onclick="closeQrKasirModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QR CODE KESELURUHAN DATA BARANG (MASTER) -->
+  <div id="qrMasterModalOverlay" class="modal-overlay hidden" onclick="if(event.target.id==='qrMasterModalOverlay') closeQrMasterModal()">
+    <div class="modal-card" style="text-align: center; max-width: 380px;">
+      <h3 style="font-size: 1.1rem; margin-bottom: 4px; color: #0f172a;" id="qrMasterModalTitle">QR Keseluruhan Data Barang</h3>
+      <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;" id="qrMasterItemCount">Total Barang: 0 Item</p>
+      <div class="form-group" style="margin-bottom: 10px; text-align: left;">
+        <label style="font-size: 0.75rem;">URL Halaman Aplikasi:</label>
+        <input type="text" id="qrMasterUrlInput" class="form-control" readonly style="font-size: 0.8rem; background: #f8fafc;">
+      </div>
+      <div id="qrMasterCanvasContainer" style="display: flex; justify-content: center; padding: 15px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;"></div>
+      <p style="font-size: 0.75rem; color: #16a34a; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; margin-bottom: 14px;">
+        ✅ Scan QR ini untuk membuka aplikasi secara keseluruhan.
+      </p>
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button type="button" class="btn btn-success" onclick="downloadQrMasterPng()">📥 Unduh Kartu Barcode (.png)</button>
+        <button type="button" class="btn btn-secondary" onclick="closeQrMasterModal()">Tutup</button>
       </div>
     </div>
   </div>
