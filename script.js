@@ -3,202 +3,48 @@ let pengeluaranList = JSON.parse(localStorage.getItem('sembako_pengeluaran')) ||
 let transaksiList = JSON.parse(localStorage.getItem('sembako_transaksi')) || [];
 let kasbonList = JSON.parse(localStorage.getItem('sembako_kasbon')) || [];
 let keranjangList = [];
-let currentSelectedKasirBarcode = "";
 
-let keranjangScanner = [];
-let selectedProdukAktif = null;
-let html5QrCode = null;
-let lastScannedCode = "";
-let lastScannedTime = 0;
-
-let currentFilteredTransaksi = [];
-
-let adminCreds = JSON.parse(localStorage.getItem('sembako_admin')) || {
-  username: 'admin',
-  password: 'admin',
-  avatar: ''
-};
-
+let adminCreds = JSON.parse(localStorage.getItem('sembako_admin')) || { username: 'admin', password: 'admin' };
 let tokoProfile = JSON.parse(localStorage.getItem('sembako_toko')) || {
-  nama: 'TOKO SEMBAKO',
+  nama: 'APLIKASI KASIR',
   telp: '087877611218',
-  alamat: 'Jl. Bojonegoro Kp. Kernaden rt 05 05',
-  notes: 'Terima kasih atas kunjungan Anda!',
-  logo: ''
+  alamat: 'Jl. Bojonegoro Kp. Kernaden rt 05 05'
 };
-
-let tempAvatarBase64 = '';
-let tempLogoBase64 = '';
-
-let currentLightboxBarcode = "";
-let currentLightboxTitle = "";
 
 document.addEventListener('DOMContentLoaded', () => {
-  barangList = JSON.parse(localStorage.getItem('sembako_barang')) || [];
-  pengeluaranList = JSON.parse(localStorage.getItem('sembako_pengeluaran')) || [];
-  transaksiList = JSON.parse(localStorage.getItem('sembako_transaksi')) || [];
-  kasbonList = JSON.parse(localStorage.getItem('sembako_kasbon')) || [];
-
   loadProfilData();
-  
-  if (barangList.length === 0 && pengeluaranList.length > 0) {
-    pengeluaranList.forEach(p => {
-      barangList.push({
-        kode: p.barcode,
-        nama: p.keterangan.toUpperCase().trim(),
-        stok: 50,
-        minStok: 3,
-        satuan: 'Pcs',
-        expired: '',
-        minExpDays: 15,
-        modal: parseFloat(p.modal) || 0,
-        jual: parseFloat(p.jual) || 0
-      });
-    });
-    localStorage.setItem('sembako_barang', JSON.stringify(barangList));
+  if (sessionStorage.getItem('sembako_logged_in') === 'true') {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    showTab('berandaTab');
   }
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const mode = urlParams.get('mode');
-  const storeParam = urlParams.get('store');
-
-  if (storeParam) {
-    tokoProfile.nama = decodeURIComponent(storeParam);
-    if(document.getElementById('browserPageTitle')) {
-      document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
-    }
-  }
-
-  if (mode === 'kasir') {
-    document.getElementById('loginPage')?.classList.add('hidden');
-    document.getElementById('appContainer')?.classList.remove('hidden');
-    setupBarcodeModeNavigation();
-    showTab('kasirTab');
-  } else {
-    const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
-    if (isSessionLoggedIn === 'true') {
-      document.getElementById('loginPage')?.classList.add('hidden');
-      document.getElementById('appContainer')?.classList.remove('hidden');
-      showTab('berandaTab');
-    } else {
-      document.getElementById('loginPage')?.classList.remove('hidden');
-      document.getElementById('appContainer')?.classList.add('hidden');
-    }
-  }
-
   renderBarangTable();
   renderPengeluaranTable();
   renderRiwayatTransaksi();
   renderKasbonTable();
-  renderKeranjangScanner();
-  populateBarangDatalist();
-  populateKasbonDatalist();
-  populateLaporanBarangSelect();
+  renderUniversalBarcode();
   updateDashboardStats();
-  updateFinancialSummary();
-  updateNotifications();
-  updateKasbonNotifications();
-  
-  const today = new Date().toISOString().split('T')[0];
-  if(document.getElementById('pengTgl')) document.getElementById('pengTgl').value = today;
-  if(document.getElementById('barExpired')) document.getElementById('barExpired').value = today;
-  if(document.getElementById('kasbonTgl')) document.getElementById('kasbonTgl').value = today;
 });
-
-function setupBarcodeModeNavigation() {
-  const menuContainer = document.getElementById('sidebarMenuContainer');
-  if(menuContainer) {
-    menuContainer.innerHTML = `
-      <button class="nav-btn active" data-tab="kasirTab" onclick="showTab('kasirTab')">🛒 Transaksi Kasir</button>
-      <button class="nav-btn" data-tab="transaksiTab" onclick="showTab('transaksiTab')">📜 Data Transaksi</button>
-      <button class="nav-btn" data-tab="kasbonTab" onclick="showTab('kasbonTab')">📑 Kasbon / Piutang</button>
-      
-      <div class="sidebar-user-section">
-        <div class="user-info">
-          <span>👤</span>
-          <span>Mode Barcode Kasir</span>
-        </div>
-      </div>
-    `;
-  }
-}
 
 function handleLogin(e) {
   e.preventDefault();
-  const uInput = document.getElementById('loginUsername').value.trim();
-  const pInput = document.getElementById('loginPassword').value.trim();
-
-  if(uInput === adminCreds.username && pInput === adminCreds.password) {
+  if(document.getElementById('loginUsername').value.trim() === adminCreds.username && document.getElementById('loginPassword').value.trim() === adminCreds.password) {
     sessionStorage.setItem('sembako_logged_in', 'true');
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     showTab('berandaTab');
-  } else {
-    alert("Username atau Password salah! (Default: admin / admin)");
-  }
+    renderUniversalBarcode();
+  } else { alert("Login Salah!"); }
 }
 
-function logout() {
-  if(confirm("Keluar dari sesi ini dan kembali ke halaman login?")) {
-    sessionStorage.removeItem('sembako_logged_in');
-    document.getElementById('appContainer').classList.add('hidden');
-    document.getElementById('loginPage').classList.remove('hidden');
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-  }
-}
+function logout() { sessionStorage.removeItem('sembako_logged_in'); location.reload(); }
 
 function showTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-  const targetTab = document.getElementById(tabId);
-  if(targetTab) targetTab.classList.add('active');
-
-  const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
-  if(activeBtn) activeBtn.classList.add('active');
-
-  if(tabId === 'berandaTab') {
-    updateDashboardStats();
-    updateFinancialSummary();
-  }
-  if(tabId === 'barangTab') populateBarangDatalist();
-  if(tabId === 'kasirTab') {
-    populateKasbonDatalist();
-    if(!document.getElementById('transaksiEditIndex').value) {
-      resetKasirForm();
-    }
-  }
-  if(tabId === 'scannerTab') {
-    populateKasbonDatalist();
-    initScannerCamera();
-  } else {
-    if(html5QrCode) {
-      try { html5QrCode.stop(); } catch(e){}
-    }
-  }
-
-  const sidebar = document.getElementById('appSidebar');
-  if(sidebar && window.innerWidth <= 768) {
-    sidebar.classList.remove('mobile-open');
-  }
-}
-
-function toggleMobileSidebar() {
-  const sidebar = document.getElementById('appSidebar');
-  if(sidebar) sidebar.classList.toggle('mobile-open');
-}
-
-function toggleForm(formId, iconId) {
-  const formCard = document.getElementById(formId);
-  const icon = document.getElementById(iconId);
-  if(formCard.classList.contains('collapsed')) {
-    formCard.classList.remove('collapsed');
-    icon.innerText = '▲';
-  } else {
-    formCard.classList.add('collapsed');
-    icon.innerText = '...';
-  }
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector(`.nav-btn[data-tab="${tabId}"]`)?.classList.add('active');
+  if(tabId === 'barangTab' || tabId === 'berandaTab') renderUniversalBarcode();
 }
 
 function saveDataToStorage() {
@@ -206,545 +52,230 @@ function saveDataToStorage() {
   localStorage.setItem('sembako_pengeluaran', JSON.stringify(pengeluaranList));
   localStorage.setItem('sembako_transaksi', JSON.stringify(transaksiList));
   localStorage.setItem('sembako_kasbon', JSON.stringify(kasbonList));
-  localStorage.setItem('sembako_admin', JSON.stringify(adminCreds));
   localStorage.setItem('sembako_toko', JSON.stringify(tokoProfile));
-  updateNotifications();
-  updateKasbonNotifications();
 }
 
-function updateDashboardStats() {
-  if(document.getElementById('statTotalBarang')) document.getElementById('statTotalBarang').innerText = barangList.length;
-  if(document.getElementById('statTotalTransaksi')) document.getElementById('statTotalTransaksi').innerText = transaksiList.length;
-  if(document.getElementById('statTotalPengeluaran')) document.getElementById('statTotalPengeluaran').innerText = pengeluaranList.length;
-}
-
-function updateFinancialSummary() {
-  const totalPengeluaran = pengeluaranList.reduce((sum, p) => sum + (parseFloat(p.modal) || parseFloat(p.nominal) || 0), 0);
-  const totalPembelianStok = barangList.reduce((sum, b) => sum + ((parseFloat(b.modal) || 0) * (parseInt(b.stok) || 0)), 0);
-  const totalOmset = transaksiList.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
-
-  if(document.getElementById('finPengeluaran')) {
-    document.getElementById('finPengeluaran').innerText = `Rp ${formatNumber(totalPengeluaran)}`;
-    document.getElementById('finPembelianStok').innerText = `Rp ${formatNumber(totalPembelianStok)}`;
-    document.getElementById('finOmset').innerText = `Rp ${formatNumber(totalOmset)}`;
+function renderUniversalBarcode() {
+  const barcodeKeyword = tokoProfile.nama.replace(/\s+/g, '-').toUpperCase();
+  const svgEl = document.getElementById('universalStoreBarcodeSvg');
+  if(svgEl) {
+    try {
+      JsBarcode(svgEl, barcodeKeyword, { format: "CODE128", width: 3, height: 90, displayValue: true, fontSize: 16 });
+    } catch(e) {}
   }
 }
 
-function formatDateID(dateString) {
-  if(!dateString) return '-';
-  const parts = dateString.split('-');
-  if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  return dateString;
+function salinUniversalBarcodeCode() {
+  const code = tokoProfile.nama.replace(/\s+/g, '-').toUpperCase();
+  navigator.clipboard.writeText(code).then(() => alert(`Barcode universal "${code}" berhasil disalin!`));
 }
 
-function updateKasbonNotifications() {
-  const notifList = document.getElementById('kasbonNotifListContainer');
-  const notifCountBadge = document.getElementById('kasbonNotifCount');
-  if(!notifList || !notifCountBadge) return;
-
-  const belumLunasList = kasbonList.filter(k => {
-    const trx = transaksiList.filter(t => t.namaKasbon && t.namaKasbon.toLowerCase() === k.nama.toLowerCase());
-    const totalBelanja = trx.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
-    const sudahDibayar = trx.reduce((sum, t) => {
-      let subSudah = 0;
-      if (t.isLunasKasbon === true) subSudah += (parseFloat(t.total) || 0);
-      if (t.items && Array.isArray(t.items)) {
-        t.items.forEach(i => { if (i.isLunasItem === true) subSudah += (parseFloat(i.subtotal) || 0); });
-      }
-      return sum + subSudah;
-    }, 0);
-    return (trx.length > 0 && (totalBelanja - sudahDibayar) > 0);
-  });
-
-  notifCountBadge.innerText = belumLunasList.length;
-  if(belumLunasList.length === 0) {
-    notifList.innerHTML = `<div class="notif-empty">Tidak ada piutang belum lunas.</div>`;
-    return;
-  }
-
-  let html = '';
-  belumLunasList.forEach((k) => {
-    html += `<div class="notif-item stok-warning"><span>📑</span><div>Piutang: <b>${k.nama}</b><br><small style="color: #dc2626; font-weight: 600;">Belum Lunas</small></div></div>`;
-  });
-  notifList.innerHTML = html;
+function downloadUniversalBarcodePNG() {
+  const svgEl = document.getElementById('universalStoreBarcodeSvg');
+  if(!svgEl) return;
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width + 40; canvas.height = img.height + 40;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 20, 20);
+    const a = document.createElement('a');
+    a.download = `Barcode-Universal-${tokoProfile.nama}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
 }
 
-function toggleKasbonNotifDropdown() {
-  document.getElementById('kasbonNotifDropdown')?.classList.toggle('hidden');
-}
-
-function updateNotifications() {
-  const notifList = document.getElementById('notifListContainer');
-  const notifCountBadge = document.getElementById('notifCount');
-  if(!notifList || !notifCountBadge) return;
-
-  let warnings = [];
-  barangList.forEach((b) => {
-    if(b.stok < (parseInt(b.minStok) || 3)) {
-      warnings.push({ text: `Stok menipis: <b>${b.nama}</b> tersisa ${b.stok} ${b.satuan}` });
-    }
-  });
-
-  notifCountBadge.innerText = warnings.length;
-  if(warnings.length === 0) {
-    notifList.innerHTML = `<div class="notif-empty">Tidak ada peringatan.</div>`;
-    return;
-  }
-  let html = '';
-  warnings.forEach(w => { html += `<div class="notif-item stok-warning"><span>⚠️</span><div>${w.text}</div></div>`; });
-  notifList.innerHTML = html;
-}
-
-function toggleNotifDropdown() {
-  document.getElementById('notifDropdown')?.classList.toggle('hidden');
-}
-
-// --- PENGELUARAN & BARCODE ---
 function savePengeluaran(e) {
   e.preventDefault();
-  const idx = document.getElementById('pengeluaranEditIndex').value;
-  const newItem = {
+  pengeluaranList.push({
     tanggal: document.getElementById('pengTgl').value,
     keterangan: document.getElementById('pengKeterangan').value.trim(),
     modal: parseFloat(document.getElementById('pengHargaModal').value) || 0,
     jual: parseFloat(document.getElementById('pengHargaJual').value) || 0,
     barcode: document.getElementById('pengBarcodeCode').value.trim()
-  };
-
-  if(idx === "") {
-    pengeluaranList.push(newItem);
-    barangList.push({
-      kode: newItem.barcode,
-      nama: newItem.keterangan.toUpperCase().trim(),
-      stok: 50,
-      minStok: 3,
-      satuan: 'Pcs',
-      expired: '',
-      minExpDays: 15,
-      modal: newItem.modal,
-      jual: newItem.jual
-    });
-  } else {
-    const oldItem = pengeluaranList[idx];
-    pengeluaranList[idx] = newItem;
-    barangList.forEach(b => {
-      if(b.kode === oldItem.barcode || b.nama.toUpperCase() === oldItem.keterangan.toUpperCase()) {
-        b.nama = newItem.keterangan.toUpperCase();
-        b.kode = newItem.barcode;
-        b.modal = newItem.modal;
-        b.jual = newItem.jual;
-      }
-    });
-  }
-
+  });
   saveDataToStorage();
   renderPengeluaranTable();
-  renderBarangTable();
-  populateBarangDatalist();
-  updateFinancialSummary();
-  resetPengeluaranForm();
+  document.getElementById('pengeluaranForm').reset();
 }
 
 function renderPengeluaranTable() {
   const tbody = document.getElementById('pengeluaranTbody');
   if(!tbody) return;
-  tbody.innerHTML = "";
-  
-  const keyword = (document.getElementById('searchPengeluaranInput')?.value || '').toLowerCase();
-  const filtered = pengeluaranList.filter(p => p.keterangan.toLowerCase().includes(keyword) || p.barcode.toLowerCase().includes(keyword));
-
-  if(filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #777;">Belum ada data pengeluaran.</td></tr>`;
-    return;
-  }
-
-  filtered.forEach((p, idx) => {
-    const origIdx = pengeluaranList.indexOf(p);
-    const svgId = `tableBarcode_peng_${origIdx}`;
-    const safeName = p.keterangan.replace(/'/g, "\\'");
-    const safeCode = p.barcode.replace(/'/g, "\\'");
-
-    tbody.innerHTML += `
-      <tr>
-        <td style="text-align: center;"><input type="checkbox" class="pengeluaran-checkbox" value="${origIdx}" style="width: 16px; height: 16px; cursor: pointer;"></td>
-        <td>${idx + 1}</td>
-        <td>${formatDateID(p.tanggal)}</td>
-        <td><b>${p.keterangan}</b></td>
-        <td>Rp ${formatNumber(p.modal)}</td>
-        <td>Rp ${formatNumber(p.jual)}</td>
-        <td style="text-align: center;">
-          <div class="barcode-clickable" onclick="bukaLightboxBarcode('${safeCode}', '${safeName}')" title="Klik untuk memperbesar barcode">
-            <svg id="${svgId}" class="table-barcode-svg"></svg>
-          </div>
-        </td>
-        <td>
-          <button class="btn btn-primary btn-sm" onclick="editPengeluaran(${origIdx})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deletePengeluaran(${origIdx})">Hapus</button>
-        </td>
-      </tr>
-    `;
-    setTimeout(() => {
-      try { JsBarcode(`#${svgId}`, p.barcode, { format: "CODE128", width: 2, height: 50, displayValue: true, fontSize: 14 }); } catch(err){}
-    }, 50);
+  tbody.innerHTML = pengeluaranList.length === 0 ? `<tr><td colspan="8" style="text-align:center;">Kosong</td></tr>` : '';
+  pengeluaranList.forEach((p, i) => {
+    tbody.innerHTML += `<tr><td><input type="checkbox" class="pengeluaran-checkbox" value="${i}"></td><td>${i+1}</td><td>${p.tanggal}</td><td><b>${p.keterangan}</b></td><td>Rp ${formatNumber(p.modal)}</td><td>Rp ${formatNumber(p.jual)}</td><td>${p.barcode}</td><td><button class="btn btn-danger btn-sm" onclick="pengeluaranList.splice(${i},1);saveDataToStorage();renderPengeluaranTable();">Hapus</button></td></tr>`;
   });
 }
 
-function resetPengeluaranForm() {
-  document.getElementById('pengeluaranForm').reset();
-  document.getElementById('pengeluaranEditIndex').value = "";
-  document.getElementById('liveBarcodeSvg').innerHTML = "";
-  toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
-}
-
-function editPengeluaran(idx) {
-  toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
-  const p = pengeluaranList[idx];
-  document.getElementById('pengeluaranEditIndex').value = idx;
-  document.getElementById('pengTgl').value = p.tanggal;
-  document.getElementById('pengKeterangan').value = p.keterangan;
-  document.getElementById('pengHargaModal').value = p.modal;
-  document.getElementById('pengHargaJual').value = p.jual;
-  document.getElementById('pengBarcodeCode').value = p.barcode;
-  previewLiveBarcode();
-}
-
-function deletePengeluaran(idx) {
-  if(confirm("Hapus data pengeluaran ini?")) {
-    pengeluaranList.splice(idx, 1);
-    saveDataToStorage();
-    renderPengeluaranTable();
-    populateBarangDatalist();
-    updateFinancialSummary();
-  }
-}
-
-function previewLiveBarcode() {
-  const code = document.getElementById('pengBarcodeCode').value.trim();
-  if(code) {
-    try { JsBarcode("#liveBarcodeSvg", code, { format: "CODE128", width: 2.5, height: 75, displayValue: true, fontSize: 16 }); } catch(e){}
-  } else {
-    document.getElementById('liveBarcodeSvg').innerHTML = "";
-  }
-}
-
-// --- DATA BARANG STOK ---
 function saveBarang(e) {
   e.preventDefault();
-  const idx = document.getElementById('barangEditIndex').value;
-  const barcodeVal = document.getElementById('barKode').value.trim();
-  
-  if(!barcodeVal) {
-    alert("Barcode wajib terisi otomatis dari data pengeluaran.");
-    return;
-  }
-
-  const barang = {
-    kode: barcodeVal,
-    nama: document.getElementById('barNama').value.toUpperCase().trim(),
+  barangList.push({
+    kode: document.getElementById('barKode').value,
+    nama: document.getElementById('barNama').value.toUpperCase(),
     stok: parseInt(document.getElementById('barStok').value) || 0,
-    minStok: parseInt(document.getElementById('barMinStok').value) || 3,
+    minStok: 3,
     satuan: document.getElementById('barSatuan').value,
     expired: document.getElementById('barExpired').value,
-    minExpDays: parseInt(document.getElementById('barMinExpDays').value) || 15,
     modal: parseFloat(document.getElementById('barHargaModal').value) || 0,
     jual: parseFloat(document.getElementById('barHargaJual').value) || 0
-  };
-
-  if(idx === "") barangList.push(barang);
-  else barangList[idx] = barang;
-
+  });
   saveDataToStorage();
   renderBarangTable();
-  populateLaporanBarangSelect();
-  updateDashboardStats();
-  updateFinancialSummary();
-  resetBarangForm();
-  alert("Data stok barang berhasil disimpan!");
+  document.getElementById('barangForm').reset();
+  alert("Barang disimpan!");
 }
 
 function renderBarangTable() {
   const tbody = document.getElementById('barangTbody');
   if(!tbody) return;
-  tbody.innerHTML = "";
-
-  const keyword = (document.getElementById('searchBarangInput')?.value || '').toLowerCase();
-  const filtered = barangList.filter(b => b.nama.toLowerCase().includes(keyword) || b.kode.toLowerCase().includes(keyword));
-
-  if(filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #777;">Belum ada data barang. Silakan input dari Data Pengeluaran terlebih dahulu.</td></tr>`;
-    return;
-  }
-
-  filtered.forEach((b, idx) => {
-    const origIdx = barangList.indexOf(b);
-    const svgIdBarang = `tableBarcode_bar_${origIdx}`;
-    const safeName = b.nama.replace(/'/g, "\\'");
-    const safeCode = b.kode.replace(/'/g, "\\'");
-
-    tbody.innerHTML += `
-      <tr id="barangRow_${origIdx}">
-        <td style="text-align: center;"><input type="checkbox" class="barang-checkbox" value="${origIdx}" style="width: 16px; height: 16px; cursor: pointer;"></td>
-        <td>${idx + 1}</td>
-        <td style="text-align: center;">
-          <div class="barcode-clickable" onclick="bukaLightboxBarcode('${safeCode}', '${safeName}')" title="Klik untuk memperbesar & unduh barcode">
-            <svg id="${svgIdBarang}" class="table-barcode-svg"></svg>
-          </div>
-        </td>
-        <td><b>${b.nama}</b></td>
-        <td><b>${b.stok}</b> ${b.satuan}</td>
-        <td>
-          <button class="btn btn-primary btn-sm" onclick="editBarang(${origIdx})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteBarang(${origIdx})">Hapus</button>
-        </td>
-      </tr>
-    `;
-    setTimeout(() => {
-      try { JsBarcode(`#${svgIdBarang}`, b.kode, { format: "CODE128", width: 2, height: 50, displayValue: true, fontSize: 14 }); } catch(err){}
-    }, 50);
+  tbody.innerHTML = barangList.length === 0 ? `<tr><td colspan="6" style="text-align:center;">Belum ada barang</td></tr>` : '';
+  barangList.forEach((b, i) => {
+    const svgId = `barCode_${i}`;
+    tbody.innerHTML += `<tr><td><input type="checkbox" class="barang-checkbox" value="${i}"></td><td>${i+1}</td><td style="text-align:center;"><svg id="${svgId}"></svg></td><td><b>${b.nama}</b></td><td>${b.stok} ${b.satuan}</td><td><button class="btn btn-danger btn-sm" onclick="barangList.splice(${i},1);saveDataToStorage();renderBarangTable();">Hapus</button></td></tr>`;
+    setTimeout(() => { try { JsBarcode(`#${svgId}`, b.kode, { format: "CODE128", width: 1.5, height: 40, displayValue: true }); } catch(e){} }, 50);
   });
-}
-
-function resetBarangForm() {
-  document.getElementById('barangForm').reset();
-  document.getElementById('barangEditIndex').value = "";
-  toggleForm('barangFormCard', 'barangToggleIcon');
-}
-
-function editBarang(idx) {
-  toggleForm('barangFormCard', 'barangToggleIcon');
-  const b = barangList[idx];
-  document.getElementById('barangEditIndex').value = idx;
-  document.getElementById('barNama').value = b.nama;
-  document.getElementById('barKode').value = b.kode;
-  document.getElementById('barStok').value = b.stok;
-  document.getElementById('barMinStok').value = b.minStok || 3;
-  document.getElementById('barSatuan').value = b.satuan;
-  document.getElementById('barExpired').value = b.expired || '';
-  document.getElementById('barMinExpDays').value = b.minExpDays || 15;
-  document.getElementById('barHargaModal').value = b.modal;
-  document.getElementById('barHargaJual').value = b.jual;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function deleteBarang(idx) {
-  if(confirm("Hapus barang ini?")) {
-    barangList.splice(idx, 1);
-    saveDataToStorage();
-    renderBarangTable();
-    populateLaporanBarangSelect();
-    updateDashboardStats();
-    updateFinancialSummary();
-  }
-}
-
-function populateBarangDatalist() {
-  const datalist = document.getElementById('listPengeluaranBarang');
-  if(!datalist) return;
-  datalist.innerHTML = '';
-  barangList.forEach(b => { datalist.innerHTML += `<option value="${b.nama}">`; });
 }
 
 function onInputBarangNama(val) {
-  const cleanVal = val.trim().toLowerCase();
-  const matched = barangList.find(b => b.nama.toLowerCase() === cleanVal);
+  const matched = pengeluaranList.find(p => p.keterangan.toLowerCase() === val.trim().toLowerCase());
   if(matched) {
-    document.getElementById('barKode').value = matched.kode;
+    document.getElementById('barKode').value = matched.barcode;
     document.getElementById('barHargaModal').value = matched.modal;
     document.getElementById('barHargaJual').value = matched.jual;
-  } else {
-    document.getElementById('barKode').value = '';
-    document.getElementById('barHargaModal').value = '';
-    document.getElementById('barHargaJual').value = '';
   }
 }
 
-// --- PENCARIAN KASIR & KOTAK HIJAU ---
 function onKetikCariBarang() {
-  const keyword = document.getElementById('kasirBarangInput').value.toLowerCase().trim();
-  const dropdown = document.getElementById('autocompleteDropdown');
-  
-  if(keyword === "") {
-    dropdown.innerHTML = "";
-    dropdown.classList.add('hidden');
-    document.getElementById('selectedKasirBarangIndex').value = "";
-    onKasirBarangChange("");
-    return;
-  }
-
-  let combinedItems = [];
-  barangList.forEach((b, idx) => {
-    combinedItems.push({ nama: b.nama, kode: b.kode, stok: b.stok, satuan: b.satuan || 'Pcs', jual: b.jual, originalIndex: idx });
-  });
-
-  pengeluaranList.forEach(p => {
-    if (!combinedItems.some(item => item.kode === p.barcode || item.nama.toLowerCase() === p.keterangan.toLowerCase())) {
-      combinedItems.push({ nama: p.keterangan.toUpperCase(), kode: p.barcode, stok: 50, satuan: 'Pcs', jual: p.jual, originalIndex: -1 });
-    }
-  });
-
-  const filtered = combinedItems.filter(item => item.nama.toLowerCase().includes(keyword) || item.kode.toLowerCase().includes(keyword));
-
-  if(filtered.length === 0) {
-    dropdown.innerHTML = `<div class="autocomplete-item" style="color: #94a3b8; cursor: default; padding: 8px 12px;">Barang tidak ditemukan</div>`;
-    dropdown.classList.remove('hidden');
-    document.getElementById('kasirInfoBarangDitemukan')?.classList.add('hidden');
-    return;
-  }
-
-  let html = "";
-  filtered.forEach(item => {
-    if (item.originalIndex !== -1) {
-      html += `<div class="autocomplete-item" onclick="pilihItemAutocomplete(${item.originalIndex})" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
-        <b>${item.nama}</b> (Stok: ${item.stok} ${item.satuan}) - Rp ${formatNumber(item.jual)} [Kode: ${item.kode}]
-      </div>`;
-    } else {
-      const newIdx = barangList.length;
-      barangList.push({ kode: item.kode, nama: item.nama, stok: 50, minStok: 3, satuan: 'Pcs', expired: '', minExpDays: 15, modal: item.jual * 0.8, jual: item.jual });
-      saveDataToStorage();
-      html += `<div class="autocomplete-item" onclick="pilihItemAutocomplete(${newIdx})" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
-        <b>${item.nama}</b> (Stok: 50 Pcs) - Rp ${formatNumber(item.jual)} [Kode: ${item.kode}]
-      </div>`;
-    }
-  });
-  dropdown.innerHTML = html;
-  dropdown.classList.remove('hidden');
+  const kw = document.getElementById('kasirBarangInput').value.toLowerCase();
+  const box = document.getElementById('autocompleteDropdown');
+  if(!kw) { box.classList.add('hidden'); return; }
+  const found = barangList.map((b,i)=>({...b, i})).filter(b => b.nama.toLowerCase().includes(kw));
+  box.innerHTML = found.map(b => `<div class="autocomplete-item" onclick="pilihItemAutocomplete(${b.i})"><b>${b.nama}</b> (Stok: ${b.stok}) - Rp ${formatNumber(b.jual)}</div>`).join('');
+  box.classList.remove('hidden');
 }
 
-function pilihItemAutocomplete(idx) {
-  const barang = barangList[idx];
-  document.getElementById('kasirBarangInput').value = `${barang.nama} (Stok: ${barang.stok} ${barang.satuan}) - Rp ${formatNumber(barang.jual)}`;
-  document.getElementById('selectedKasirBarangIndex').value = idx;
+function pilihItemAutocomplete(i) {
+  const b = barangList[i];
+  document.getElementById('kasirBarangInput').value = `${b.nama} - Rp ${formatNumber(b.jual)}`;
+  document.getElementById('selectedKasirBarangIndex').value = i;
   document.getElementById('autocompleteDropdown').classList.add('hidden');
-  document.getElementById('kasirQty').value = 1;
-  onKasirBarangChange(idx);
 }
 
-function onKasirBarangChange(idx) {
-  const previewArea = document.getElementById('kasirBarcodePreviewArea');
-  const placeholder = document.getElementById('kasirBarcodePlaceholder');
-  const infoBox = document.getElementById('kasirInfoBarangDitemukan');
+function tambahItemKeranjang() {
+  const idx = document.getElementById('selectedKasirBarangIndex').value;
+  const qty = parseInt(document.getElementById('kasirQty').value) || 1;
+  if(idx === "" || !barangList[idx]) return;
+  const b = barangList[idx];
+  keranjangList.push({ kode: b.kode, nama: b.nama, hargaJual: b.jual, qty, subtotal: b.jual * qty });
+  renderKeranjang();
+  document.getElementById('kasirBarangInput').value = "";
+  document.getElementById('selectedKasirBarangIndex').value = "";
+}
 
-  if(idx !== "" && idx !== undefined && barangList[idx]) {
-    const barang = barangList[idx];
-    currentSelectedKasirBarcode = barang.kode;
+function renderKeranjang() {
+  const tbody = document.getElementById('keranjangTbody');
+  if(!tbody) return;
+  let total = 0;
+  tbody.innerHTML = keranjangList.map((item, i) => {
+    total += item.subtotal;
+    return `<tr><td>${i+1}</td><td>${item.nama}</td><td>${item.kode}</td><td>Rp ${formatNumber(item.hargaJual)}</td><td>${item.qty}</td><td>Rp ${formatNumber(item.subtotal)}</td><td><button class="btn btn-danger btn-sm" onclick="keranjangList.splice(${i},1);renderKeranjang();">Hapus</button></td></tr>`;
+  }).join('');
+  document.getElementById('kasirTotalDisplay').innerText = `Rp ${formatNumber(total)}`;
+}
 
-    if(infoBox) {
-      infoBox.classList.remove('hidden');
-      document.getElementById('infoNamaDitemukan').innerText = barang.nama;
-      document.getElementById('infoDetailDitemukan').innerText = `Harga: Rp ${formatNumber(barang.jual)} | Sisa Stok: ${barang.stok} ${barang.satuan}`;
-    }
+function hitungKembalian() {
+  const total = keranjangList.reduce((sum, i) => sum + i.subtotal, 0);
+  const bayar = parseFloat(document.getElementById('kasirBayar').value) || 0;
+  document.getElementById('kasirKembalianDisplay').innerText = bayar >= total ? `Rp ${formatNumber(bayar - total)}` : `Rp 0`;
+}
 
-    if(previewArea) previewArea.classList.remove('hidden');
-    if(placeholder) placeholder.classList.add('hidden');
-    
-    try { 
-      JsBarcode("#kasirBarcodeSvg", barang.kode, { 
-        format: "CODE128", 
-        width: 2, 
-        height: 60, 
-        displayValue: true, 
-        fontSize: 14 
-      }); 
-    } catch(e) {
-      console.error(e);
-    }
-  } else {
-    currentSelectedKasirBarcode = "";
-    if(infoBox) infoBox.classList.add('hidden');
-    if(previewArea) previewArea.classList.add('hidden');
-    if(placeholder) placeholder.classList.remove('hidden');
+function prosesPembayaran() {
+  if(keranjangList.length === 0) return;
+  const total = keranjangList.reduce((sum, i) => sum + i.subtotal, 0);
+  const bayar = parseFloat(document.getElementById('kasirBayar').value) || 0;
+  const namaKasbon = document.getElementById('kasirNamaKasbon').value.trim();
+
+  keranjangList.forEach(item => {
+    const b = barangList.find(x => x.kode === item.kode);
+    if(b) b.stok -= item.qty;
+  });
+
+  transaksiList.push({
+    id: 'TRX-' + Date.now(),
+    tanggal: new Date().toLocaleString('id-ID'),
+    namaKasbon, items: [...keranjangList], total, bayar, kembalian: bayar - total, isLunasKasbon: false
+  });
+
+  if(namaKasbon && !kasbonList.some(k => k.nama.toLowerCase() === namaKasbon.toLowerCase())) {
+    kasbonList.push({ tanggal: new Date().toISOString().split('T')[0], nama: namaKasbon, telp: '', alamat: '', status: 'Belum Lunas' });
   }
+
+  saveDataToStorage();
+  renderBarangTable();
+  renderRiwayatTransaksi();
+  renderKasbonTable();
+  keranjangList = [];
+  renderKeranjang();
+  alert("Transaksi Berhasil!");
 }
 
-function downloadKasirBarcodePNG() {
-  if(!currentSelectedKasirBarcode) return;
-  const svgEl = document.getElementById('kasirBarcodeSvg');
-  if(!svgEl) return;
-  const xml = new XMLSerializer().serializeToString(svgEl);
-  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
-  
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width || 300; canvas.height = img.height || 100;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-    const a = document.createElement('a');
-    a.download = `barcode_${currentSelectedKasirBarcode}.png`;
-    a.href = canvas.toDataURL('image/png');
-    document.body.appendChild(a); a.click(); a.remove();
-  };
-  img.src = url;
+function renderRiwayatTransaksi() {
+  const tbody = document.getElementById('riwayatTransaksiTbody');
+  if(!tbody) return;
+  tbody.innerHTML = transaksiList.length === 0 ? `<tr><td colspan="7" style="text-align:center;">Belum ada transaksi</td></tr>` : '';
+  transaksiList.forEach((t, i) => {
+    tbody.innerHTML += `<tr><td class="no-print"><input type="checkbox" class="trx-checkbox" value="${i}"></td><td>${i+1}</td><td>${t.items.map(x=>x.nama).join(', ')}</td><td style="text-align:center;"><b>${t.namaKasbon || '-'}</b></td><td>${t.tanggal}</td><td>Rp ${formatNumber(t.total)}</td><td class="no-print"><button class="btn btn-danger btn-sm" onclick="transaksiList.splice(${i},1);saveDataToStorage();renderRiwayatTransaksi();">Hapus</button></td></tr>`;
+  });
 }
 
-// --- LIGHTBOX BARCODE & DOWNLOAD BARANG ---
-function bukaLightboxBarcode(code, title = "Barcode Barang") {
-  if (!code) return;
-  currentLightboxBarcode = code;
-  currentLightboxTitle = title;
-  
-  let modal = document.getElementById('barcodeLightboxModal');
-  if(!modal) {
-    modal = document.createElement('div');
-    modal.id = 'barcodeLightboxModal';
-    modal.className = 'lightbox-overlay';
-    modal.innerHTML = `
-      <div class="lightbox-container" style="background:#fff; padding:20px; border-radius:8px; text-align:center; max-width:400px; margin:auto;">
-        <h3 id="lightboxItemTitle" style="font-size:1.1rem; margin-bottom:15px;">${title}</h3>
-        <div style="background:#fff; padding:10px;"><svg id="lightboxBarcodeSvg"></svg></div>
-        <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
-          <button class="btn btn-success btn-sm" onclick="downloadLightboxBarcodePNG()">📥 Unduh Barcode PNG</button>
-          <button class="btn btn-secondary btn-sm" onclick="tutupLightboxBarcode()">Tutup</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-  document.getElementById('lightboxItemTitle').innerText = title;
-  modal.classList.remove('hidden');
-  try {
-    JsBarcode("#lightboxBarcodeSvg", code, { format: "CODE128", width: 2.5, height: 90, displayValue: true, fontSize: 16 });
-  } catch(e){}
+function saveKasbon(e) {
+  e.preventDefault();
+  kasbonList.push({
+    tanggal: document.getElementById('kasbonTgl').value,
+    nama: document.getElementById('kasbonNama').value.trim(),
+    telp: document.getElementById('kasbonTelp').value.trim(),
+    alamat: document.getElementById('kasbonAlamat').value.trim(),
+    status: 'Belum Lunas'
+  });
+  saveDataToStorage();
+  renderKasbonTable();
+  document.getElementById('kasbonForm').reset();
 }
 
-function tutupLightboxBarcode() {
-  document.getElementById('barcodeLightboxModal')?.classList.add('hidden');
-}
-
-function downloadLightboxBarcodePNG() {
-  if(!currentLightboxBarcode) return;
-  const svgEl = document.getElementById('lightboxBarcodeSvg');
-  if(!svgEl) return;
-  const xml = new XMLSerializer().serializeToString(svgEl);
-  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
-  
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width || 350; canvas.height = img.height || 120;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-    const a = document.createElement('a');
-    a.download = `barcode_${currentLightboxTitle.replace(/\s+/g, '_')}_${currentLightboxBarcode}.png`;
-    a.href = canvas.toDataURL('image/png');
-    document.body.appendChild(a); a.click(); a.remove();
-  };
-  img.src = url;
-}
-
-// --- UTILITIES ---
-function formatNumber(num) {
-  return new Intl.NumberFormat('id-ID').format(num);
+function renderKasbonTable() {
+  const tbody = document.getElementById('kasbonTbody');
+  if(!tbody) return;
+  tbody.innerHTML = kasbonList.length === 0 ? `<tr><td colspan="5" style="text-align:center;">Belum ada kasbon</td></tr>` : '';
+  kasbonList.forEach((k, i) => {
+    tbody.innerHTML += `<tr><td>${i+1}</td><td>${k.tanggal}</td><td><b>${k.nama}</b></td><td><span style="color:red; font-weight:bold;">${k.status}</span></td><td><button class="btn btn-danger btn-sm" onclick="kasbonList.splice(${i},1);saveDataToStorage();renderKasbonTable();">Hapus</button></td></tr>`;
+  });
 }
 
 function loadProfilData() {
-  if(document.getElementById('browserPageTitle')) document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
-  if(document.getElementById('bannerStoreName')) document.getElementById('bannerStoreName').innerText = tokoProfile.nama;
-  if(document.getElementById('bannerAlamat')) document.getElementById('bannerAlamat').innerText = tokoProfile.alamat;
-  if(document.getElementById('bannerTelp')) document.getElementById('bannerTelp').innerText = tokoProfile.telp;
-  if(document.getElementById('navBrandText')) document.getElementById('navBrandText').innerText = tokoProfile.nama;
+  document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
+  document.getElementById('tokoNama').value = tokoProfile.nama;
+  document.getElementById('tokoTelp').value = tokoProfile.telp;
+  document.getElementById('tokoAlamat').value = tokoProfile.alamat;
 }
+
+function saveProfilToko(e) {
+  e.preventDefault();
+  tokoProfile.nama = document.getElementById('tokoNama').value;
+  tokoProfile.telp = document.getElementById('tokoTelp').value;
+  tokoProfile.alamat = document.getElementById('tokoAlamat').value;
+  saveDataToStorage();
+  loadProfilData();
+  renderUniversalBarcode();
+  alert("Profil Disimpan!");
+}
+
+function toggleForm(fId, iId) { document.getElementById(fId).classList.toggle('collapsed'); }
+function formatNumber(n) { return new Intl.NumberFormat('id-ID').format(n); }
+function updateDashboardStats() {}
