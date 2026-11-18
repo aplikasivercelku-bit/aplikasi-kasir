@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="browserPageTitle">Toko Sembako</title>
-  <link id="browserFavicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏪</text></svg>">
+  <title id="browserPageTitle">Aplikasi Kasir</title>
+  <link id="browserFavicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
   <link rel="stylesheet" href="style.css">
-  <!-- Library JsBarcode -->
+  <!-- Library JsBarcode & QRCode -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- Library Html5Qrcode Scanner -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
@@ -17,7 +18,7 @@
   <div id="loginPage" class="login-wrapper">
     <div class="login-card">
       <div class="login-header">
-        <h2 id="loginPortalTitle">Toko Sembako</h2>
+        <h2 id="loginPortalTitle">Aplikasi Kasir</h2>
         <p id="loginPortalSubtitle">Sistem Manajemen Toko & Kasir</p>
       </div>
       <form onsubmit="handleLogin(event)">
@@ -32,7 +33,7 @@
         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">🔐 Masuk Aplikasi</button>
       </form>
       <div class="login-footer">
-        <p id="loginFooterCopyright">© 2026 Toko Sembako</p>
+        <p id="loginFooterCopyright">© 2026 Aplikasi Kasir</p>
       </div>
     </div>
   </div>
@@ -40,11 +41,10 @@
   <!-- APLIKASI UTAMA (SETELAH LOGIN) -->
   <div id="appContainer" class="app-container hidden">
     <!-- SIDEBAR -->
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="appSidebar">
       <div class="sidebar-header">
         <img id="navBrandImg" src="" alt="" class="sidebar-logo hidden">
-        <span class="sidebar-title" id="navBrandText">Toko Sembako</span>
+        <span class="sidebar-title" id="navBrandText">Aplikasi Kasir</span>
       </div>
       <div class="sidebar-menu">
         <button class="nav-btn active" data-tab="berandaTab" onclick="showTab('berandaTab')">🏠 Beranda</button>
@@ -57,7 +57,6 @@
         <button class="nav-btn" data-tab="laporanTab" onclick="showTab('laporanTab')">📊 Laporan & Cetak</button>
         <button class="nav-btn" data-tab="panduanTab" onclick="showTab('panduanTab')">📖 Panduan Aplikasi</button>
         
-        <!-- BAGIAN "HALO, OLAN" & TOMBOL TITIK 3 DIPINDAHKAN DI SINI (DI BAWAH PANDUAN APLIKASI) -->
         <div class="sidebar-user-section">
           <div class="user-info">
             <img id="navUserAvatarImg" src="" alt="" class="avatar-small hidden">
@@ -67,7 +66,7 @@
           <div class="admin-dropdown-wrapper">
             <button class="btn-dots-menu" onclick="toggleAdminMenuDropdown(event)" title="Menu Pengaturan Admin">...</button>
             <div class="admin-dropdown-menu hidden" id="adminMenuDropdown">
-              <button class="admin-dropdown-item" onclick="showTab('profilTab'); toggleAdminMenuDropdown(event);">⚙️ Profil & Toko</button>
+              <button class="admin-dropdown-item" onclick="showTab('profilTab'); toggleAdminMenuDropdown(event);">⚙️ Profil & Pengaturan Data</button>
               <button class="admin-dropdown-item logout-item" onclick="logout()">⏻ Keluar</button>
             </div>
           </div>
@@ -81,7 +80,7 @@
       <header class="topbar">
         <div class="topbar-left-group">
           <button class="mobile-toggle" onclick="toggleMobileSidebar()">☰</button>
-          <span class="mobile-nav-brand" id="topbarMobileBrandText">Toko Sembako</span>
+          <span class="mobile-nav-brand" id="topbarMobileBrandText">Aplikasi Kasir</span>
         </div>
         <div class="topbar-right">
           <!-- NOTIFIKASI KASBON -->
@@ -116,13 +115,13 @@
       <section id="berandaTab" class="tab-content active">
         <div class="banner-welcome">
           <div class="banner-text">
-            <h1 id="bannerStoreName" style="font-size: 1.6rem; margin-bottom: 5px;">TOKO SEMBAKO</h1>
+            <h1 id="bannerStoreName" style="font-size: 1.6rem; margin-bottom: 5px;">APLIKASI KASIR</h1>
             <p id="bannerAlamat" style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 3px;">Jl. Bojonegoro Kp. Kernaden rt 05 05</p>
             <p id="bannerTelp" style="font-size: 0.85rem; opacity: 0.8;">Telp: 087877611218</p>
           </div>
           <div class="banner-logo">
             <img id="bannerLogoImg" src="" alt="" class="hidden">
-            <span id="bannerLogoIcon">🏪</span>
+            <span id="bannerLogoIcon">🛒</span>
           </div>
         </div>
 
@@ -196,7 +195,7 @@
                 <input type="number" id="pengHargaJual" class="form-control" required min="0" placeholder="0">
               </div>
               <div class="form-group">
-                <label>Kode Barcode Barang</label>
+                <label>Kode Barcode Barang (Permanen)</label>
                 <input type="text" id="pengBarcodeCode" class="form-control" required placeholder="Ketik kode barcode..." oninput="previewLiveBarcode()">
               </div>
             </div>
@@ -258,7 +257,7 @@
                 <datalist id="listPengeluaranBarang"></datalist>
               </div>
               <div class="form-group">
-                <label>Kode Barcode (Otomatis)</label>
+                <label>Kode Barcode (Otomatis & Permanen)</label>
                 <input type="text" id="barKode" class="form-control" readonly required placeholder="Terisi otomatis...">
               </div>
               <div class="form-group">
@@ -319,8 +318,11 @@
               <h2>Tampilan Data Barang</h2>
               <input type="text" id="searchBarangInput" class="form-control" placeholder="Cari nama / kode barang.." oninput="renderBarangTable()" style="max-width: 250px;">
             </div>
-            <div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <button type="button" class="btn btn-danger" onclick="hapusBarangTerpilih()">🗑️ Hapus Terpilih</button>
+              <span style="font-size: 0.8rem; color: #475569; background: #e0e7ff; padding: 6px 12px; border-radius: 6px;">
+                💡 <b>Info Barcode:</b> Unduh <b>QR Langsung Kasir</b> atau <b>Barcode Batang</b> cukup 1x saja. Scan via Google Lens / Kamera HP langsung menuju Transaksi Kasir!
+              </span>
             </div>
           </div>
           <div class="table-responsive">
@@ -330,9 +332,9 @@
                   <th style="width: 40px; text-align: center;">
                     <input type="checkbox" id="selectAllBarangCheckbox" onclick="toggleSelectAllBarang(this)" style="width: 16px; height: 16px; cursor: pointer;">
                   </th>
-                  <th style="width: 8%;">No</th>
-                  <th style="width: 32%; text-align: center;">Kode Barcode (Visual Besar)</th>
-                  <th style="width: 30%;">Nama Barang</th>
+                  <th style="width: 6%;">No</th>
+                  <th style="width: 36%; text-align: center;">Barcode Permanen (Langsung Kasir)</th>
+                  <th style="width: 28%;">Nama Barang</th>
                   <th style="width: 15%;">Stok</th>
                   <th style="width: 15%;">Aksi</th>
                 </tr>
@@ -346,16 +348,30 @@
       <!-- TAB 4: KASIR PENJUALAN -->
       <section id="kasirTab" class="tab-content">
         <div class="card">
-          <h2 id="kasirFormTitle" style="font-size: 1.2rem; margin-bottom: 15px; color: #0f172a;">🛒 Kasir Penjualan Toko Sembako</h2>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+            <h2 id="kasirFormTitle" style="font-size: 1.2rem; color: #0f172a; margin: 0;">🛒 Kasir Penjualan</h2>
+            <span id="kasirSyncBadge" style="font-size: 0.78rem; background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 20px; font-weight: 600;">
+              🔗 Terhubung ke Data Barang & Pengaturan Data
+            </span>
+          </div>
           <input type="hidden" id="transaksiEditIndex">
           
           <div class="kasir-grid">
             <div>
               <div class="form-group" style="position: relative; margin-bottom: 15px;">
-                <label>Cari / Ketik Nama Barang / Kode Barcode:</label>
+                <label>Cari / Ketik Nama Barang / Kode Barcode (Otomatis Terisi Saat Scan):</label>
                 <input type="text" id="kasirBarangInput" class="form-control" placeholder="Ketik nama atau scan barcode barang..." oninput="onKetikCariBarang()" autocomplete="off">
                 <input type="hidden" id="selectedKasirBarangIndex">
                 <div id="autocompleteDropdown" class="autocomplete-box hidden"></div>
+              </div>
+
+              <!-- INFO DETAIL BARANG YANG TERDETEKSI DARI SCAN / PILIHAN -->
+              <div id="kasirDetectedItemBox" class="hidden" style="background: #f0fdf4; border: 1px solid #86efac; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="font-size: 0.8rem; color: #15803d; font-weight: 600; margin-bottom: 4px;">✅ Barang Ditemukan dari Data Barang:</div>
+                <div style="font-size: 1.05rem; font-weight: bold; color: #0f172a;" id="kasirDetectedNama">-</div>
+                <div style="font-size: 0.85rem; color: #334155; margin-top: 2px;">
+                  Harga: <b id="kasirDetectedHarga" style="color: #16a34a;">Rp 0</b> | Sisa Stok: <b id="kasirDetectedStok">0</b> | Kode: <code id="kasirDetectedKode">-</code>
+                </div>
               </div>
 
               <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
@@ -374,8 +390,9 @@
               <div id="kasirBarcodePlaceholder" class="barcode-placeholder">Belum ada barang dipilih</div>
               <div id="kasirBarcodePreviewArea" class="hidden">
                 <svg id="kasirBarcodeSvg" style="max-width: 180px; height: 50px;"></svg>
-                <div style="margin-top: 5px;">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="downloadKasirBarcodePNG()">📥 Unduh Barcode PNG</button>
+                <div style="margin-top: 5px; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="downloadKasirBarcodePNG()">📥 PNG Batang</button>
+                  <button type="button" class="btn btn-primary btn-sm" onclick="bukaModalQrKasir(currentSelectedKasirBarcode)">📱 QR Scan HP</button>
                 </div>
               </div>
             </div>
@@ -407,15 +424,15 @@
               <div id="kasirTotalDisplay" style="font-size: 1.6rem; font-weight: bold; color: #4f46e5;">Rp 0</div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 250px;">
+            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 260px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 0.8rem;">Nama Kasbon (Opsional jika berhutang):</label>
-                <input type="text" id="kasirNamaKasbon" class="form-control" list="listKasbonNama" placeholder="Ketik atau pilih nama pelanggan...">
+                <label style="font-size: 0.8rem;">Nama Kasbon (Isi jika berhutang -> otomatis buka halaman Kasbon):</label>
+                <input type="text" id="kasirNamaKasbon" class="form-control" list="listKasbonNama" placeholder="Kosongkan jika bayar tunai...">
                 <datalist id="listKasbonNama"></datalist>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
                 <label style="font-size: 0.8rem;">Jumlah Tunai Dibayar (Rp):</label>
-                <input type="number" id="kasirBayar" class="form-control" placeholder="0" oninput="hitungKembalian()">
+                <input type="number" id="kasirBayar" class="form-control" placeholder="0 (Otomatis 0 jika kasbon)" oninput="hitungKembalian()">
               </div>
               <div>
                 <span style="font-size: 0.85rem; font-weight: 600; color: #475569;">Uang Kembalian: </span>
@@ -434,8 +451,8 @@
       <section id="scannerTab" class="tab-content">
         <div class="scanner-container">
           <div class="scanner-header">
-            <h2>📷 Scanner Barcode Barang</h2>
-            <p>Gunakan kamera perangkat, unggah gambar, atau ketik/salin barcode secara manual.</p>
+            <h2>📷 Scanner Barcode Barang (Otomatis ke Transaksi Kasir)</h2>
+            <p>Arahkan kamera ke barcode barang atau unggah gambar barcode untuk langsung menampilkan ke Transaksi Kasir.</p>
           </div>
 
           <div class="card scanner-box">
@@ -462,8 +479,8 @@
             </div>
 
             <div style="margin-top: 15px;">
-              <label style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 5px; display: block;">Atau Ketik / Salin Barcode Manual:</label>
-              <input type="text" id="scanResultCode" class="form-control" placeholder="Ketik atau tempel (paste) kode barcode di sini..." oninput="cariProdukByBarcodeScanner(this.value)" style="text-align: center; font-weight: bold;">
+              <label style="font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 5px; display: block;">Atau Ketik / Salin Barcode Manual (Otomatis Masuk Kasir):</label>
+              <input type="text" id="scanResultCode" class="form-control" placeholder="Ketik atau tempel (paste) kode barcode di sini..." oninput="cariProdukByBarcodeScanner(this.value, true)" style="text-align: center; font-weight: bold;">
             </div>
           </div>
 
@@ -495,50 +512,13 @@
                 <input type="number" id="scanQty" class="form-control" value="1" min="1">
               </div>
               <div style="align-self: flex-end;">
-                <button type="button" class="btn btn-success" onclick="tambahKeKeranjangScanner()">🛒 Tambah ke Keranjang Scan</button>
+                <button type="button" class="btn btn-success" onclick="kirimHasilScanKeKasir()">🛒 Masukkan ke Transaksi Kasir</button>
               </div>
             </div>
           </div>
 
           <div class="not-found-text hidden" id="productNotFound" style="text-align: center; margin-top: 15px;">
             ⚠️ Barcode terdeteksi, namun barang tidak ditemukan di database stok. Silakan input dari menu Data Pengeluaran terlebih dahulu.
-          </div>
-
-          <!-- KERANJANG SCANNER -->
-          <div class="card" style="margin-top: 25px;">
-            <h3 style="font-size: 1rem; margin-bottom: 12px; color: #0f172a;">Keranjang Belanja Scanner</h3>
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Nama Barang</th>
-                    <th>Harga Satuan</th>
-                    <th>Qty</th>
-                    <th>Subtotal</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="keranjangScannerTbody"></tbody>
-              </table>
-            </div>
-
-            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-              <div>
-                <div style="font-size: 0.85rem; color: #64748b;">TOTAL SCANNER:</div>
-                <div id="scannerTotalDisplay" style="font-size: 1.4rem; font-weight: bold; color: #4f46e5;">Rp 0</div>
-              </div>
-
-              <div style="display: flex; flex-direction: column; gap: 8px; min-width: 230px;">
-                <input type="text" id="scannerNamaKasbon" class="form-control" list="listKasbonNama" placeholder="Nama Kasbon (Opsional)...">
-                <input type="number" id="scannerBayar" class="form-control" placeholder="Jumlah Tunai (Rp)..." oninput="hitungKembalianScanner()">
-                <div>
-                  <span style="font-size: 0.8rem; font-weight: 600;">Kembalian: </span>
-                  <span id="scannerKembalianDisplay" style="font-size: 1rem; font-weight: bold; color: #16a34a;">Rp 0</span>
-                </div>
-                <button type="button" class="btn btn-success" onclick="selesaikanTransaksiScanner()">✅ Selesaikan Transaksi Scanner</button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -580,7 +560,7 @@
 
         <div class="card print-area" style="margin-top: 20px;">
           <div class="print-header">
-            <h2 id="printHeaderCompanyName">Toko Sembako</h2>
+            <h2 id="printHeaderCompanyName">Aplikasi Kasir</h2>
             <p id="printHeaderCompanyAlamat">Jl. Bojonegoro Kp. Kernaden rt 05 05</p>
           </div>
           <div class="table-header-tools" style="flex-direction: column; align-items: flex-start; gap: 12px;">
@@ -716,7 +696,7 @@
 
         <div class="card print-area" style="margin-top: 20px;">
           <div class="print-header" style="text-align: center; margin-bottom: 15px;">
-            <h2 id="printHeaderCompanyNameLaporan" style="font-size: 1.2rem; font-weight: bold;">Toko Sembako</h2>
+            <h2 id="printHeaderCompanyNameLaporan" style="font-size: 1.2rem; font-weight: bold;">Aplikasi Kasir</h2>
             <p id="printHeaderCompanyAlamatLaporan" style="font-size: 0.85rem; color: #555;">Jl. Bojonegoro Kp. Kernaden rt 05 05</p>
             <hr style="border: none; border-top: 1px solid #000; margin: 8px 0;">
             <h3 id="printHeaderTitleLaporan" style="font-size: 1rem; margin-top: 5px;">REKAP LAPORAN PENJUALAN KESELURUHAN</h3>
@@ -743,40 +723,26 @@
       <!-- TAB 9: PANDUAN APLIKASI -->
       <section id="panduanTab" class="tab-content">
         <div class="card">
-          <h2 id="panduanTitleHeader" style="font-size: 1.2rem; margin-bottom: 15px; color: #0f172a;">📖 Panduan Penggunaan Aplikasi Toko Sembako</h2>
+          <h2 id="panduanTitleHeader" style="font-size: 1.2rem; margin-bottom: 15px; color: #0f172a;">📖 Panduan Penggunaan Aplikasi Kasir</h2>
           <div style="font-size: 0.9rem; line-height: 1.6; color: #334155; display: flex; flex-direction: column; gap: 12px;">
-            <div><b>1. Sistem Notifikasi Otomatis (Dua Jenis Peringatan di Topbar):</b> Aplikasi ini dilengkapi dua tombol lonceng/notifikasi interaktif di bagian pojok kanan atas yang memperbarui status secara otomatis setiap kali ada perubahan data:
+            <div><b>1. Barcode Permanen (1 Kali Download untuk Selamanya):</b>
               <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li><b>Peringatan Stok & Kadaluarsa (Lonceng Kuning / 🔔):</b> Otomatis mendeteksi stok barang menipis atau masa aktif/expired yang mendekati batas (waktunya) atau sudah kadaluarsa. Klik pada item notifikasi akan langsung mengarahkan Anda ke Data Barang terkait.</li>
-                <li><b>Peringatan Piutang Belum Lunas (Ikon Dokumen / 📑):</b> Otomatis melacak pelanggan yang memiliki sisa tagihan kasbon/piutang yang belum dilunasi.</li>
+                <li>Di menu <b>Data Barang</b>, Anda dapat mengunduh <b>QR Langsung Kasir (PNG)</b> atau <b>Barcode Batang (PNG)</b>.</li>
+                <li>Barcode tersebut mengikat pada <b>Kode Barang Permanen</b> dan <b>ID Toko dari Pengaturan Data</b>. Jika suatu hari Anda memperbarui harga atau stok barang di Data Pengeluaran / Data Barang, barcode yang sudah dicetak tetap berfungsi normal tanpa perlu diunduh ulang.</li>
+                <li>Saat barcode di-scan memakai kamera HP, Google Lens, atau aplikasi barcode dari Play Store, link akan langsung terbuka di halaman <b>Transaksi Kasir</b> dengan nama barang sudah terdeteksi otomatis.</li>
               </ul>
             </div>
-            <div><b>2. Penanganan Aplikasi *Stuck* / *Error* & Cache Browser Penuh:</b> 
-              Jika aplikasi terasa lambat, *stuck* (macet), atau mengalami *error* akibat data memori penjelajahan (*cache*) browser penuh:
+            <div><b>2. Alur Transaksi Kasir & Kasbon Otomatis:</b>
               <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li>Segera lakukan pencadangan data dengan klik tombol <b>"Unduh File Cadangan (Backup JSON)"</b> di menu <i>Profil & Toko</i> agar data aman.</li>
-                <li>Bersihkan atau hapus data penjelajahan/cache browser Anda melalui pengaturan browser (Settings &gt; Clear browsing data).</li>
-                <li>Setelah itu, buka kembali aplikasi dan lakukan *Restore* (Pulihkan Data) menggunakan file cadangan JSON yang telah diunduh sebelumnya.</li>
+                <li><b>Tanpa Kasbon (Tunai):</b> Setelah menyelesaikan pembayaran, sistem langsung menampilkan hasilnya di halaman <b>Data Transaksi</b>.</li>
+                <li><b>Dengan Kasbon:</b> Jika kolom <i>Nama Kasbon</i> diisi, setelah transaksi selesai sistem langsung mengarahkan Anda ke halaman <b>Kasbon / Piutang</b> dan menyorot nama serta status piutang pelanggan tersebut. Data transaksi tetap tersimpan dan sinkron di halaman <b>Data Transaksi</b>.</li>
               </ul>
             </div>
-            <div><b>3. Logika Penghapusan Data & Pengembalian Stok Otomatis:</b>
-              <ul style="margin-top: 6px; margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
-                <li><b>Penghapusan Kasbon / Transaksi Belum Lunas:</b> Jika data kasbon atau transaksi yang dihapus berstatus <b>Belum Lunas</b>, maka stok barang akan <b>dikembalikan otomatis</b> ke database stok toko karena barang tersebut batal terjual/belum terbayar.</li>
-                <li><b>Penghapusan Kasbon / Transaksi Lunas:</b> Jika data kasbon atau transaksi yang dihapus berstatus <b>Lunas</b> (atau tunai murni), maka stok barang <b>tidak dikembalikan</b> karena barang secara fisik sudah sah terjual.</li>
-                <li><b>Sinkronisasi Profil Kasbon:</b> Jika seluruh transaksi dari suatu nama kasbon dihapus dari riwayat transaksi atau jika profil kasbon dihapus dari menu Kasbon, data terkait akan otomatis disinkronkan.</li>
-              </ul>
-            </div>
-            <div><b>4. Data Pengeluaran & Barcode:</b> Input pembelian modal atau barang baru beserta harga modal, harga jual, dan kode barcodenya.</div>
-            <div><b>5. Data Barang:</b> Masukkan stok barang berdasarkan data pengeluaran yang telah diinput sebelumnya.</div>
-            <div><b>6. Transaksi Kasir:</b> Pilih barang, masukkan jumlah, dan selesaikan pembayaran atau catat kasbon/piutang.</div>
-            <div><b>7. Scanner Barcode:</b> Gunakan kamera langsung, unggah gambar barcode, atau ketik/salin barcode secara manual.</div>
-            <div><b>8. Data Transaksi & Laporan:</b> Lihat riwayat penjualan, cetak rekap, atau cetak nota struk thermal lengkap dengan status kasbon.</div>
-            <div><b>9. Profil & Toko:</b> Ubah informasi nama toko, alamat, telepon, logo perusahaan, serta foto profil admin melalui menu titik 3 di sudut kiri bawah.</div>
           </div>
         </div>
       </section>
 
-      <!-- TAB 10: PROFIL & TOKO -->
+      <!-- TAB 10: PROFIL, PENGATURAN DATA & SINKRONISASI BARCODE -->
       <section id="profilTab" class="tab-content">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
           <!-- PROFIL ADMIN -->
@@ -808,9 +774,9 @@
             </form>
           </div>
 
-          <!-- PROFIL TOKO & PERUSAHAAN -->
+          <!-- PROFIL TOKO & PENGATURAN DATA BARCODE PERMANEN -->
           <div class="card">
-            <h2 style="font-size: 1.1rem; margin-bottom: 15px; color: #0f172a;">🏪 Pengaturan Profil & Logo Toko</h2>
+            <h2 style="font-size: 1.1rem; margin-bottom: 15px; color: #0f172a;">🏪 Pengaturan Profil & Sinkronisasi Barcode</h2>
             <form onsubmit="saveProfilToko(event)">
               <div style="text-align: center; margin-bottom: 15px;">
                 <div style="position: relative; display: inline-block;">
@@ -826,7 +792,12 @@
               </div>
 
               <div class="form-group" style="margin-bottom: 12px;">
-                <label>Nama Toko / Perusahaan</label>
+                <label>ID Kasir Permanen (Kunci Sinkronisasi Barcode 1x Unduh)</label>
+                <input type="text" id="tokoStoreId" class="form-control" required placeholder="aplikasi-kasir-utama">
+                <small style="color: #64748b; font-size: 0.75rem;">Jangan ubah ID ini agar barcode yang sudah dicetak tetap konek selamanya.</small>
+              </div>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label>Nama Toko / Usaha</label>
                 <input type="text" id="tokoNama" class="form-control" required>
               </div>
               <div class="form-group" style="margin-bottom: 12px;">
@@ -841,7 +812,7 @@
                 <label>Catatan Kaki Nota Struk</label>
                 <input type="text" id="tokoNotes" class="form-control" required>
               </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%;">💾 Simpan Profil Toko</button>
+              <button type="submit" class="btn btn-primary" style="width: 100%;">💾 Simpan Pengaturan Aplikasi</button>
             </form>
           </div>
         </div>
@@ -849,10 +820,6 @@
         <!-- BACKUP & RESTORE DATA -->
         <div class="card" style="margin-top: 20px;">
           <h2 style="font-size: 1.1rem; margin-bottom: 12px; color: #0f172a;">💾 Pencadangan & Pemulihan Data (Backup & Restore)</h2>
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Amankan seluruh data transaksi, stok barang, kasbon, dan pengaturan toko Anda.</p>
-          <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; color: #b45309;">
-            ⚠️ <b>Tips Atasi Error / Stuck:</b> Jika aplikasi macet atau penjelajahan browser penuh, segera klik <b>"Unduh File Cadangan"</b> di bawah ini. Setelah membersihkan data/cache browser, Anda dapat memulihkan data dengan mudah menggunakan tombol <b>"Pulihkan Data (Restore)"</b>.
-          </div>
           <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
             <button type="button" class="btn btn-success" onclick="exportDataApp()">📥 Unduh File Cadangan (Backup JSON)</button>
             <div style="display: flex; gap: 10px; align-items: center;">
@@ -875,6 +842,22 @@
       <div style="margin-top: 15px; display: flex; gap: 10px;" class="no-print">
         <button class="btn btn-success" onclick="triggerWindowPrint()" style="flex: 1;">🖨️ Cetak Nota</button>
         <button class="btn btn-secondary" onclick="closePrintModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QR CODE PERMANEN LANGSUNG KASIR -->
+  <div id="qrKasirModalOverlay" class="modal-overlay hidden" onclick="if(event.target.id==='qrKasirModalOverlay') closeQrKasirModal()">
+    <div class="modal-card" style="text-align: center; max-width: 360px;">
+      <h3 style="font-size: 1.05rem; margin-bottom: 4px; color: #0f172a;" id="qrModalItemTitle">Barcode Langsung Kasir</h3>
+      <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;" id="qrModalItemCode">Kode: -</p>
+      <div id="qrModalCanvasContainer" style="display: flex; justify-content: center; padding: 15px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;"></div>
+      <p style="font-size: 0.75rem; color: #16a34a; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; margin-bottom: 14px;">
+        ✅ Scan pakai <b>Google Lens / Kamera HP</b> langsung membuka Transaksi Kasir & memanggil data barang ini.
+      </p>
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button type="button" class="btn btn-success" onclick="downloadQrKasirPng()">📥 Unduh QR PNG (1x Selamanya)</button>
+        <button type="button" class="btn btn-secondary" onclick="closeQrKasirModal()">Tutup</button>
       </div>
     </div>
   </div>
