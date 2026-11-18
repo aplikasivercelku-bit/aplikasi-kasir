@@ -321,7 +321,6 @@
               <input type="text" id="searchBarangInput" class="form-control" placeholder="Cari nama / kode barang.." oninput="renderBarangTable()" style="max-width: 250px;">
             </div>
             
-            <!-- TOMBOL BUKA KARTU BARCODE MASTER KESELURUHAN DATA BARANG (DI BAWAH KOLOM PENCARIAN) -->
             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%;">
               <button type="button" class="btn btn-primary" onclick="bukaModalQrMaster()">📱 Lihat QR Barcode Toko</button>
               <button type="button" class="btn btn-danger" onclick="hapusBarangTerpilih()">🗑️ Hapus Terpilih</button>
@@ -842,7 +841,7 @@
     </main>
   </div>
 
-  <!-- MODAL KARTU BARCODE QR MASTER (PERSIS GAMBAR 1) -->
+  <!-- MODAL KARTU BARCODE QR MASTER -->
   <div id="qrMasterModalOverlay" class="modal-overlay hidden" onclick="tutupModalQrMaster(event)">
     <div class="modal-card" style="max-width: 390px; border-radius: 16px; padding: 24px 20px; text-align: center;" onclick="event.stopPropagation()">
       <h2 id="qrCardStoreName" style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 14px; text-transform: uppercase;">APLIKASI KASIR</h2>
