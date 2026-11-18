@@ -4,47 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="browserPageTitle">APLIKASI KASIR</title>
-  <link id="browserFavicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏪</text></svg>">
   <link rel="stylesheet" href="style.css">
+  <!-- Pustaka Barcode & QR Code Generator -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
-  <!-- HALAMAN LOGIN -->
-  <div id="loginPage" class="login-wrapper">
+  <!-- HALAMAN LOGIN ADMIN -->
+  <div id="loginPage" class="login-page-container">
     <div class="login-card">
-      <div class="login-header">
-        <h2 id="loginPortalTitle">APLIKASI KASIR</h2>
-        <p id="loginPortalSubtitle">Sistem Manajemen Toko & Kasir</p>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 id="bannerStoreName" style="color: #1e293b; margin-bottom: 5px;">APLIKASI KASIR</h2>
+        <p style="color: #64748b; font-size: 0.9rem;">Sistem Manajemen Toko & Kasir</p>
       </div>
       <form onsubmit="handleLogin(event)">
         <div class="form-group" style="margin-bottom: 15px;">
-          <label>Username Admin</label>
-          <input type="text" id="loginUsername" class="form-control" required placeholder="Masukkan username...">
+          <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Username Admin</label>
+          <input type="text" id="loginUsername" class="form-control" value="admin" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
         </div>
         <div class="form-group" style="margin-bottom: 20px;">
-          <label>Password</label>
-          <input type="password" id="loginPassword" class="form-control" required placeholder="Masukkan password...">
+          <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">Password</label>
+          <input type="password" id="loginPassword" class="form-control" value="admin" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">🔐 Masuk Aplikasi</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; background: #4f46e5; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🔐 Masuk Aplikasi</button>
       </form>
-      <div class="login-footer">
-        <p id="loginFooterCopyright">© 2026 APLIKASI KASIR</p>
+      <div style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: #94a3b8;">
+        &copy; 2026 APLIKASI KASIR[cite: 6]
       </div>
     </div>
   </div>
 
-  <!-- APLIKASI UTAMA -->
-  <div id="appContainer" class="app-container hidden">
-    <!-- SIDEBAR -->
+  <!-- KONTAINER UTAMA APLIKASI -->
+  <div id="appContainer" class="app-layout hidden">
+    <!-- SIDEBAR NAVIGASI -->
     <aside class="sidebar" id="appSidebar">
-      <div class="sidebar-header">
-        <img id="navBrandImg" src="" alt="" class="sidebar-logo hidden">
-        <span class="sidebar-title" id="navBrandText">APLIKASI KASIR</span>
+      <div class="sidebar-header" style="display: flex; align-items: center; gap: 10px; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <img id="navBrandImg" src="" class="hidden" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+        <h3 id="navBrandText" style="color: #fff; font-size: 1.1rem; margin: 0;">APLIKASI KASIR</h3>
       </div>
-      <div class="sidebar-menu">
+      <nav class="sidebar-menu" id="sidebarMenuContainer" style="padding: 15px 10px; display: flex; flex-direction: column; gap: 5px;">
         <button class="nav-btn active" data-tab="berandaTab" onclick="showTab('berandaTab')">🏠 Beranda</button>
         <button class="nav-btn" data-tab="pengeluaranTab" onclick="showTab('pengeluaranTab')">📁 Data Pengeluaran & Barcode</button>
         <button class="nav-btn" data-tab="barangTab" onclick="showTab('barangTab')">📦 Data Barang</button>
@@ -54,346 +54,706 @@
         <button class="nav-btn" data-tab="kasbonTab" onclick="showTab('kasbonTab')">📑 Kasbon / Piutang</button>
         <button class="nav-btn" data-tab="laporanTab" onclick="showTab('laporanTab')">📊 Laporan & Cetak</button>
         <button class="nav-btn" data-tab="panduanTab" onclick="showTab('panduanTab')">📖 Panduan Aplikasi</button>
-        
-        <div class="sidebar-user-section">
-          <div class="user-info">
-            <img id="navUserAvatarImg" src="" alt="" class="avatar-small hidden">
-            <span id="navUserAvatarIcon">👤</span>
-            <span id="sidebarUserText">Halo, admin</span>
-          </div>
-          <div class="admin-dropdown-wrapper">
-            <button class="btn-dots-menu" onclick="toggleAdminMenuDropdown(event)" title="Menu Pengaturan Admin">...</button>
-            <div class="admin-dropdown-menu hidden" id="adminMenuDropdown">
-              <button class="admin-dropdown-item" onclick="showTab('profilTab'); toggleAdminMenuDropdown(event);">⚙️ Profil & Toko</button>
-              <button class="admin-dropdown-item logout-item" onclick="logout()">⏻ Keluar</button>
-            </div>
-          </div>
+        <button class="nav-btn" data-tab="profilTab" onclick="showTab('profilTab')">⚙️ Pengaturan & Profil</button>
+      </nav>
+      <div style="margin-top: auto; padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; align-items: center; justify-content: space-between; color: #fff;">
+          <span id="sidebarUserText" style="font-size: 0.85rem;">Halo, admin</span>
+          <button onclick="logout()" style="background: #ef4444; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Keluar</button>
         </div>
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- KONTEN UTAMA -->
     <main class="main-content">
-      <header class="topbar">
-        <div class="topbar-left-group">
-          <button class="mobile-toggle" onclick="toggleMobileSidebar()">☰</button>
-          <span class="mobile-nav-brand" id="topbarMobileBrandText">APLIKASI KASIR</span>
+      <!-- TOPBAR -->
+      <header class="topbar" style="background: #fff; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" style="display:none; background:none; border:none; font-size: 1.2rem; cursor:pointer;">☰</button>
+          <h2 id="topbarMobileBrandText" style="font-size: 1.2rem; color: #1e293b; margin: 0;">APLIKASI KASIR</h2>
         </div>
-        <div class="topbar-right">
-          <div class="notification-wrapper">
-            <button class="notif-btn" onclick="toggleKasbonNotifDropdown()" title="Peringatan Kasbon">
-              <span>📑</span>
-              <span class="badge-notif" id="kasbonNotifCount">0</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <!-- Notifikasi Stok & Exp -->
+          <div style="position: relative;">
+            <button onclick="toggleNotifDropdown()" style="background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 50%; cursor: pointer; position: relative;">
+              🔔 <span id="notifCount" style="position: absolute; top: -2px; right: -2px; background: #dc2626; color: #fff; font-size: 0.65rem; padding: 2px 5px; border-radius: 50%;">0</span>
             </button>
-            <div class="notif-dropdown hidden" id="kasbonNotifDropdown">
-              <h4 style="font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Peringatan Piutang Belum Lunas</h4>
-              <div id="kasbonNotifListContainer"></div>
+            <div id="notifDropdown" class="hidden dropdown-card" style="position: absolute; right: 0; top: 40px; width: 300px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 12px; z-index: 100;">
+              <h4 style="font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">Peringatan Stok & Kadaluarsa</h4>
+              <div id="notifListContainer" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
           </div>
-
-          <div class="notification-wrapper">
-            <button class="notif-btn" onclick="toggleNotifDropdown()" title="Peringatan Stok & Expired">
-              <span>🔔</span>
-              <span class="badge-notif" id="notifCount">0</span>
+          <!-- Notifikasi Kasbon -->
+          <div style="position: relative;">
+            <button onclick="toggleKasbonNotifDropdown()" style="background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 50%; cursor: pointer; position: relative;" title="Piutang Belum Lunas">
+              📑 <span id="kasbonNotifCount" style="position: absolute; top: -2px; right: -2px; background: #f59e0b; color: #fff; font-size: 0.65rem; padding: 2px 5px; border-radius: 50%;">0</span>
             </button>
-            <div class="notif-dropdown hidden" id="notifDropdown">
-              <h4 style="font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Peringatan Stok & Kadaluarsa</h4>
-              <div id="notifListContainer"></div>
+            <div id="kasbonNotifDropdown" class="hidden dropdown-card" style="position: absolute; right: 0; top: 40px; width: 300px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 12px; z-index: 100;">
+              <h4 style="font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">Piutang Belum Lunas</h4>
+              <div id="kasbonNotifListContainer" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
           </div>
-
-          <div style="font-size: 0.9rem; font-weight: 600; color: #1e293b;" id="userDisplayName">admin</div>
+          <!-- Profil Singkat -->
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img id="navUserAvatarImg" src="" class="hidden" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+            <span id="userDisplayName" style="font-size: 0.9rem; font-weight: 600; color: #334155;">admin</span>
+          </div>
         </div>
       </header>
 
-      <!-- TAB 1: BERANDA -->
-      <section id="berandaTab" class="tab-content active">
-        <div class="banner-welcome">
-          <div class="banner-text">
-            <h1 id="bannerStoreName" style="font-size: 1.6rem; margin-bottom: 5px;">APLIKASI KASIR</h1>
-            <p id="bannerAlamat" style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 3px;">Jl. Bojonegoro Kp. Kernaden rt 05 05</p>
-            <p id="bannerTelp" style="font-size: 0.85rem; opacity: 0.8;">Telp: 087877611218</p>
-          </div>
-          <div class="banner-logo">
-            <img id="bannerLogoImg" src="" alt="" class="hidden">
-            <span id="bannerLogoIcon">🏪</span>
-          </div>
-        </div>
+      <!-- TAB KONTEN -->
+      <div class="content-body" style="padding: 25px;">
 
-        <div class="stats-grid" style="margin-top: 20px;">
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;">📦</div>
+        <!-- 1. BERANDA TAB -->
+        <div id="berandaTab" class="tab-content active">
+          <div style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: #fff; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(79,70,229,0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
             <div>
-              <div style="font-size: 0.8rem; color: #64748b;">Total Barang Stok</div>
-              <div id="statTotalBarang" style="font-size: 1.3rem; font-weight: bold;">0</div>
+              <h1 id="bannerStoreName" style="font-size: 1.8rem; margin-bottom: 8px;">APLIKASI KASIR</h1>
+              <p id="bannerAlamat" style="font-size: 0.95rem; opacity: 0.9; margin-bottom: 4px;">Alamat Toko</p>
+              <p id="bannerTelp" style="font-size: 0.9rem; opacity: 0.8;">Telp: -</p>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">🛒</div>
-            <div>
-              <div style="font-size: 0.8rem; color: #64748b;">Total Transaksi Penjualan</div>
-              <div id="statTotalTransaksi" style="font-size: 1.3rem; font-weight: bold;">0</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #fee2e2; color: #dc2626;">📁</div>
-            <div>
-              <div style="font-size: 0.8rem; color: #64748b;">Total Data Pengeluaran</div>
-              <div id="statTotalPengeluaran" style="font-size: 1.3rem; font-weight: bold;">0</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 2: DATA PENGELUARAN -->
-      <section id="pengeluaranTab" class="tab-content">
-        <div class="card collapsible-card collapsed" id="pengeluaranFormCard">
-          <div class="card-header" onclick="toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon')">
-            <h2>➕ Tambah Data Pengeluaran Baru</h2>
-            <span id="pengeluaranToggleIcon">...</span>
-          </div>
-          <form id="pengeluaranForm" onsubmit="savePengeluaran(event)" class="card-body">
-            <input type="hidden" id="pengeluaranEditIndex">
-            <div class="form-grid">
-              <div class="form-group"><label>Tanggal</label><input type="date" id="pengTgl" class="form-control" required></div>
-              <div class="form-group"><label>Keterangan / Nama Barang</label><input type="text" id="pengKeterangan" class="form-control" required placeholder="Contoh: Beras, Aqua"></div>
-              <div class="form-group"><label>Harga Modal (Rp)</label><input type="number" id="pengHargaModal" class="form-control" required min="0" placeholder="0"></div>
-              <div class="form-group"><label>Harga Jual (Rp)</label><input type="number" id="pengHargaJual" class="form-control" required min="0" placeholder="0"></div>
-              <div class="form-group"><label>Kode Barcode Barang</label><input type="text" id="pengBarcodeCode" class="form-control" required placeholder="Ketik kode barcode..." oninput="previewLiveBarcode()"></div>
-            </div>
-            <div style="text-align: center;"><svg id="liveBarcodeSvg"></svg></div>
-            <div style="margin-top: 4px; display: flex; gap: 10px;">
-              <button type="submit" class="btn btn-primary">Simpan Pengeluaran</button>
-              <button type="button" class="btn btn-secondary" onclick="resetPengeluaranForm()">Batal</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-          <div class="table-header-tools">
-            <h2>Tampilan Data Pengeluaran</h2>
-            <input type="text" id="searchPengeluaranInput" class="form-control" placeholder="Cari barang..." oninput="renderPengeluaranTable()" style="max-width: 250px;">
-          </div>
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllPengeluaranCheckbox" onclick="toggleSelectAllPengeluaran(this)"></th>
-                  <th>No</th><th>Tanggal</th><th>Keterangan</th><th>Harga Modal</th><th>Harga Jual</th><th>Kode Barcode</th><th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="pengeluaranTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 3: DATA BARANG (DENGAN QR CODE KESELURUHAN) -->
-      <section id="barangTab" class="tab-content">
-        <!-- QR CODE UNIVERSAL / KESELURUHAN -->
-        <div class="card" style="text-align: center; background: #ffffff; margin-bottom: 20px;">
-          <h2 style="font-size: 1.1rem; margin-bottom: 5px; color: #0f172a;" id="qrCardTitle">QR TOKO SEMBAKO (Keseluruhan Barang)</h2>
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Scan QR ini dengan HP / Google Lens untuk langsung membuka Transaksi Kasir tanpa login[cite: 5, 9].</p>
-          <div style="display: inline-block; padding: 15px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;" id="universalQRCodeContainer"></div>
-          <div id="universalQRUrlText" style="font-size: 0.75rem; color: #64748b; margin-top: 10px; word-break: break-all;"></div>
-          <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button type="button" class="btn btn-primary btn-sm" onclick="salinUniversalQRUrl()">📋 Salin Link QR</button>
-            <button type="button" class="btn btn-success btn-sm" onclick="downloadUniversalQRPNG()">📥 Unduh Kartu Barcode (.png)</button>
-          </div>
-        </div>
-
-        <div class="card collapsible-card collapsed" id="barangFormCard">
-          <div class="card-header" onclick="toggleForm('barangFormCard', 'barangToggleIcon')">
-            <h2>➕ Tambah Data Barang Stok</h2>
-            <span id="barangToggleIcon">...</span>
-          </div>
-          <form id="barangForm" onsubmit="saveBarang(event)" class="card-body">
-            <input type="hidden" id="barangEditIndex">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Nama Barang</label>
-                <input type="text" id="barNama" class="form-control" required list="listPengeluaranBarang" oninput="onInputBarangNama(this.value)" placeholder="Pilih atau ketik...">
-                <datalist id="listPengeluaranBarang"></datalist>
+            <!-- Master QR Code untuk Toko -->
+            <div style="background: #fff; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div id="bannerLogoContainer" style="margin-bottom: 5px;">
+                <img id="bannerLogoImg" src="" class="hidden" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin: 0 auto;">
               </div>
-              <div class="form-group"><label>Kode Barcode</label><input type="text" id="barKode" class="form-control" readonly required></div>
-              <div class="form-group"><label>Jumlah Stok</label><input type="number" id="barStok" class="form-control" required min="0" placeholder="0"></div>
-              <div class="form-group"><label>Minimal Stok</label><input type="number" id="barMinStok" class="form-control" required min="1" value="3"></div>
-              <div class="form-group">
-                <label>Satuan</label>
-                <select id="barSatuan" class="form-control" required>
-                  <option value="Pcs">Pcs</option><option value="Dus">Dus</option><option value="Kg">Kg</option><option value="Liter">Liter</option><option value="Pack">Pack</option><option value="Botol">Botol</option><option value="Box">Box</option>
+              <div id="masterQrContainer" style="cursor: pointer;" onclick="bukaModalQrMasterBarang()" title="Klik untuk memperbesar Master QR Toko"></div>
+              <small style="display: block; color: #4f46e5; font-weight: bold; font-size: 0.75rem; margin-top: 4px;">📱 Master QR Toko</small>
+            </div>
+          </div>
+
+          <!-- Statistik Kotak -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px;">
+            <div class="stat-card" style="background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <span style="font-size: 1.5rem;">📦</span>
+              <h3 style="font-size: 1.6rem; color: #0f172a; margin: 10px 0 5px;" id="statTotalBarang">0</h3>
+              <p style="color: #64748b; font-size: 0.85rem;">Total Barang Stok</p>
+            </div>
+            <div class="stat-card" style="background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <span style="font-size: 1.5rem;">🛒</span>
+              <h3 style="font-size: 1.6rem; color: #0f172a; margin: 10px 0 5px;" id="statTotalTransaksi">0</h3>
+              <p style="color: #64748b; font-size: 0.85rem;">Total Transaksi Penjualan</p>
+            </div>
+            <div class="stat-card" style="background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <span style="font-size: 1.5rem;">📁</span>
+              <h3 style="font-size: 1.6rem; color: #0f172a; margin: 10px 0 5px;" id="statTotalPengeluaran">0</h3>
+              <p style="color: #64748b; font-size: 0.85rem;">Total Data Pengeluaran</p>
+            </div>
+          </div>
+
+          <!-- Ringkasan Keuangan -->
+          <div style="background: #fff; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #1e293b;">Ringkasan Keuangan Toko</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                <span style="font-size: 0.8rem; color: #64748b;">Total Modal Pengeluaran</span>
+                <h4 style="font-size: 1.2rem; color: #dc2626; margin-top: 5px;" id="finPengeluaran">Rp 0</h4>
+              </div>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <span style="font-size: 0.8rem; color: #64748b;">Total Aset Pembelian Stok</span>
+                <h4 style="font-size: 1.2rem; color: #d97706; margin-top: 5px;" id="finPembelianStok">Rp 0</h4>
+              </div>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                <span style="font-size: 0.8rem; color: #64748b;">Total Omset Penjualan</span>
+                <h4 style="font-size: 1.2rem; color: #16a34a; margin-top: 5px;" id="finOmset">Rp 0</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. DATA PENGELUARAN & BARCODE TAB -->
+        <div id="pengeluaranTab" class="tab-content">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="font-size: 1.3rem; color: #1e293b;">Data Pengeluaran & Barcode Otomatis</h2>
+            <button class="btn btn-primary" onclick="toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon')">
+              <span id="pengeluaranToggleIcon">▲</span> Tambah Data Pengeluaran Baru
+            </button>
+          </div>
+
+          <!-- Form Input Pengeluaran -->
+          <div id="pengeluaranFormCard" class="card" style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+            <h3 style="font-size: 1rem; margin-bottom: 15px; color: #334155;">Form Input / Edit Pengeluaran</h3>
+            <form id="pengeluaranForm" onsubmit="savePengeluaran(event)">
+              <input type="hidden" id="pengeluaranEditIndex">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Tanggal</label>
+                  <input type="date" id="pengTgl" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Keterangan / Nama Barang</label>
+                  <input type="text" id="pengKeterangan" list="listPengeluaranBarang" class="form-control" placeholder="Contoh: Beras Ramos 5kg" required oninput="onInputBarangNama(this.value)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  <datalist id="listPengeluaranBarang"></datalist>
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Harga Modal (Rp)</label>
+                  <input type="number" id="pengHargaModal" class="form-control" placeholder="0" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Harga Jual (Rp)</label>
+                  <input type="number" id="pengHargaJual" class="form-control" placeholder="0" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Kode Barcode Permanen</label>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="pengBarcodeCode" class="form-control" placeholder="Otomatis / Scan" required oninput="previewLiveBarcode()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pengBarcodeCode').value = 'BRC-' + Date.now(); previewLiveBarcode();" style="padding: 8px 12px; background: #64748b; color: #fff; border:none; border-radius:6px; cursor:pointer;" title="Generate Kode Baru">🔄</button>
+                  </div>
+                </div>
+              </div>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 15px; border: 1px dashed #cbd5e1;">
+                <span style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 5px;">Pratinjau Barcode Permanen:</span>
+                <svg id="liveBarcodeSvg"></svg>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success" style="background: #16a34a; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Simpan Pengeluaran</button>
+                <button type="button" class="btn btn-secondary" onclick="resetPengeluaranForm()" style="background: #64748b; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tabel Pengeluaran -->
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+              <input type="text" id="searchPengeluaranInput" class="form-control" placeholder="Cari pengeluaran..." oninput="renderPengeluaranTable()" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; width: 250px;">
+              <button class="btn btn-danger" onclick="hapusPengeluaranTerpilih()" style="background: #dc2626; color: #fff; border:none; padding: 8px 12px; border-radius: 6px; cursor:pointer;">🗑️ Hapus Terpilih</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 10px; width: 40px; text-align: center;"><input type="checkbox" id="selectAllPengeluaranCheckbox" onclick="toggleSelectAllPengeluaran(this)"></th>
+                    <th style="padding: 10px;">No</th>
+                    <th style="padding: 10px;">Tanggal</th>
+                    <th style="padding: 10px;">Keterangan / Barang</th>
+                    <th style="padding: 10px;">Harga Modal</th>
+                    <th style="padding: 10px;">Harga Jual</th>
+                    <th style="padding: 10px; text-align: center;">Barcode Permanen</th>
+                    <th style="padding: 10px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="pengeluaranTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. DATA BARANG TAB -->
+        <div id="barangTab" class="tab-content">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="font-size: 1.3rem; color: #1e293b;">Data Barang Stok Toko</h2>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-success" onclick="bukaModalQrMasterBarang()" style="background: #16a34a; color: #fff; border:none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">📱 QR Master Toko</button>
+              <button class="btn btn-primary" onclick="toggleForm('barangFormCard', 'barangToggleIcon')">
+                <span id="barangToggleIcon">▲</span> Tambah / Atur Barang
+              </button>
+            </div>
+          </div>
+
+          <!-- Form Stok Barang -->
+          <div id="barangFormCard" class="card collapsed" style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+            <h3 style="font-size: 1rem; margin-bottom: 15px; color: #334155;">Form Kelola Stok Barang</h3>
+            <form id="barangForm" onsubmit="saveBarang(event)">
+              <input type="hidden" id="barangEditIndex">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Nama Barang</label>
+                  <input type="text" id="barNama" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Kode Barcode Permanen</label>
+                  <input type="text" id="barKode" class="form-control" readonly style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Jumlah Stok</label>
+                  <input type="number" id="barStok" class="form-control" placeholder="0" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Batas Min. Stok (Peringatan)</label>
+                  <input type="number" id="barMinStok" class="form-control" value="3" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Satuan</label>
+                  <select id="barSatuan" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="Pcs">Pcs</option>
+                    <option value="Pack">Pack</option>
+                    <option value="Dus">Dus</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Liter">Liter</option>
+                    <option value="Sachet">Sachet</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Tanggal Kadaluarsa (Expired)</label>
+                  <input type="date" id="barExpired" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Peringatan Exp (Hari Sebelumnya)</label>
+                  <input type="number" id="barMinExpDays" class="form-control" value="15" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Harga Modal (Rp)</label>
+                  <input type="number" id="barHargaModal" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Harga Jual (Rp)</label>
+                  <input type="number" id="barHargaJual" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success" style="background: #16a34a; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Simpan Data Barang</button>
+                <button type="button" class="btn btn-secondary" onclick="resetBarangForm()" style="background: #64748b; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tabel Barang -->
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+              <input type="text" id="searchBarangInput" class="form-control" placeholder="Cari nama barang / barcode..." oninput="renderBarangTable()" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; width: 250px;">
+              <button class="btn btn-danger" onclick="hapusBarangTerpilih()" style="background: #dc2626; color: #fff; border:none; padding: 8px 12px; border-radius: 6px; cursor:pointer;">🗑️ Hapus Terpilih</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 10px; width: 40px; text-align: center;"><input type="checkbox" id="selectAllBarangCheckbox" onclick="toggleSelectAllBarang(this)"></th>
+                    <th style="padding: 10px;">No</th>
+                    <th style="padding: 10px; text-align: center;">Barcode Permanen</th>
+                    <th style="padding: 10px;">Nama Barang</th>
+                    <th style="padding: 10px;">Stok</th>
+                    <th style="padding: 10px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="barangTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. TRANSAKSI KASIR TAB -->
+        <div id="kasirTab" class="tab-content">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="kasirFormTitle" style="font-size: 1.3rem; color: #1e293b;">🛒 Kasir Penjualan</h2>
+            <button class="btn btn-secondary" onclick="resetKasirForm()" style="background: #64748b; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">Reset Keranjang</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start;">
+            <!-- Kolom Kiri: Input & Keranjang -->
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="margin-bottom: 20px; position: relative;">
+                <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Cari Barang / Scan Barcode / Ketik Nama</label>
+                <div style="display: flex; gap: 10px;">
+                  <input type="text" id="kasirBarangInput" class="form-control" placeholder="Ketik nama atau kode barcode..." oninput="onKetikCariBarang()" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  <input type="number" id="kasirQty" class="form-control" value="1" min="1" style="width: 80px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" title="Jumlah Qty">
+                  <button type="button" class="btn btn-primary" onclick="tambahItemKeranjang()" style="background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">Tambah</button>
+                </div>
+                <!-- Autocomplete Dropdown -->
+                <div id="autocompleteDropdown" class="hidden" style="position: absolute; left: 0; right: 80px; top: 70px; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>
+                <input type="hidden" id="selectedKasirBarangIndex">
+                <input type="hidden" id="transaksiEditIndex">
+              </div>
+
+              <!-- Tabel Keranjang -->
+              <div class="table-responsive">
+                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                      <th style="padding: 10px;">No</th>
+                      <th style="padding: 10px;">Nama Barang</th>
+                      <th style="padding: 10px; text-align: center;">Barcode</th>
+                      <th style="padding: 10px;">Harga Jual</th>
+                      <th style="padding: 10px;">Qty</th>
+                      <th style="padding: 10px;">Subtotal</th>
+                      <th style="padding: 10px;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="keranjangTbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Kolom Kanan: Pembayaran & Total -->
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <h3 style="font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; color: #1e293b;">Rincian Pembayaran</h3>
+              
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+                <span style="font-size: 0.85rem; color: #64748b; display: block;">TOTAL BELANJA</span>
+                <h2 id="kasirTotalDisplay" style="font-size: 2rem; color: #0f172a; margin-top: 5px;">Rp 0</h2>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Nama Pelanggan (Jika Kasbon / Berhutang)</label>
+                <input type="text" id="kasirNamaKasbon" list="listKasbonNama" class="form-control" placeholder="Kosongkan jika tunai langsung" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <datalist id="listKasbonNama"></datalist>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 15px;">
+                <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Tunai Dibayar (Rp)</label>
+                <input type="number" id="kasirBayar" class="form-control" placeholder="0" oninput="hitungKembalian()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+              </div>
+
+              <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.9rem; font-weight: 600; color: #475569;">Kembalian:</span>
+                <h3 id="kasirKembalianDisplay" style="font-size: 1.2rem; color: #16a34a; margin: 0;">Rp 0</h3>
+              </div>
+
+              <button type="button" id="btnSimpanTransaksi" class="btn btn-success" onclick="prosesPembayaran()" style="width: 100%; background: #16a34a; color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem;">✅ Selesaikan Transaksi</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. SCANNER BARCODE TAB -->
+        <div id="scannerTab" class="tab-content">
+          <div style="background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; max-width: 600px; margin: 0 auto; text-align: center;">
+            <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: #1e293b;">📷 Scanner Barcode Produk</h2>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Gunakan kamera perangkat Anda untuk memindai barcode atau unggah gambar barcode.</p>
+
+            <!-- Mode Switcher -->
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+              <button id="btnTabCamera" class="btn btn-primary active" onclick="switchMode('camera')" style="padding: 8px 15px; border-radius: 6px; border: none; cursor: pointer;">📷 Kamera Live</button>
+              <button id="btnTabUpload" class="btn btn-secondary" onclick="switchMode('upload')" style="padding: 8px 15px; border-radius: 6px; border: none; cursor: pointer;">📁 Unggah Gambar</button>
+            </div>
+
+            <!-- Kamera View -->
+            <div id="cameraSection" style="margin-bottom: 20px;">
+              <div id="reader" style="width: 100%; max-width: 400px; margin: 0 auto; border-radius: 8px; overflow: hidden;"></div>
+              <p id="scannerStatus" style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">Arahkan kamera ke barcode produk...</p>
+            </div>
+
+            <!-- Upload View -->
+            <div id="uploadSection" class="hidden" style="margin-bottom: 20px;">
+              <input type="file" id="uploadBarcodeFile" accept="image/*" onchange="scanImageFromFile(event)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%;">
+              <p id="uploadStatus" style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">Pilih file gambar barcode untuk dipindai.</p>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+              <input type="text" id="scanResultCode" class="form-control" placeholder="Kode barcode hasil scan..." oninput="cariProdukByBarcodeScanner(this.value)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-weight: bold;">
+            </div>
+
+            <!-- Hasil Deteksi Produk -->
+            <div id="productDetailInfo" class="hidden" style="margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; text-align: left;">
+              <h4 id="infoNama" style="color: #1e293b; margin-bottom: 5px;">Nama Barang</h4>
+              <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px;">Stok Tersedia: <b id="infoStok">0</b></p>
+              <p style="font-size: 0.9rem; color: #16a34a; font-weight: bold; margin-bottom: 12px;">Harga: <span id="infoHarga">Rp 0</span></p>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" id="scanQty" class="form-control" value="1" min="1" style="width: 80px; padding: 6px;">
+                <button class="btn btn-success" onclick="kirimHasilScanKeKasir()" style="background: #16a34a; color: #fff; border:none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">🛒 Masukkan ke Kasir</button>
+              </div>
+            </div>
+            <div id="productNotFound" class="hidden" style="margin-top: 15px; color: #dc2626; font-size: 0.9rem; font-weight: 600;">
+              ❌ Barang tidak ditemukan di Data Barang. Silakan input dari Data Pengeluaran / Data Barang terlebih dahulu.
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. DATA TRANSAKSI TAB -->
+        <div id="transaksiTab" class="tab-content">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="font-size: 1.3rem; color: #1e293b;">📜 Riwayat Data Transaksi Penjualan</h2>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="no-print">
+              <button class="btn btn-danger" onclick="hapusTransaksiTerpilih()" style="background: #dc2626; color: #fff; border:none; padding: 8px 12px; border-radius: 6px; cursor:pointer;">🗑️ Hapus Terpilih</button>
+              <button class="btn btn-secondary" onclick="cetakDataTransaksiTerfilter()" style="background: #475569; color: #fff; border:none; padding: 8px 12px; border-radius: 6px; cursor:pointer;">🖨️ Cetak Rekap</button>
+            </div>
+          </div>
+
+          <!-- Filter Tanggal -->
+          <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;" class="no-print">
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 3px;">Dari Tanggal</label>
+              <input type="date" id="trxTglDari" class="form-control" onchange="filterTransaksiByDateRange()" style="padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 3px;">Sampai Tanggal</label>
+              <input type="date" id="trxTglSampai" class="form-control" onchange="filterTransaksiByDateRange()" style="padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+              <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 3px;">Cari Barang / Kasbon</label>
+              <input type="text" id="searchTransaksiKeyword" class="form-control" placeholder="Cari nama barang atau pelanggan..." oninput="filterTransaksiByDateRange()" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+            <div style="align-self: flex-end;">
+              <button class="btn btn-secondary" onclick="resetFilterTransaksi()" style="padding: 7px 12px; background: #64748b; color: #fff; border:none; border-radius:6px; cursor:pointer;">Reset</button>
+            </div>
+          </div>
+
+          <!-- Tabel Riwayat Transaksi -->
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div class="table-responsive">
+              <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                    <th class="no-print" style="padding: 10px; width: 40px; text-align: center;"><input type="checkbox" id="selectAllTransaksiCheckbox" onclick="toggleSelectAllTransaksi(this)"></th>
+                    <th style="padding: 10px;">No</th>
+                    <th style="padding: 10px;">Rincian Barang</th>
+                    <th style="padding: 10px; text-align: center;">Pelanggan / Kasbon</th>
+                    <th style="padding: 10px;">Tanggal</th>
+                    <th style="padding: 10px;">Jumlah Item</th>
+                    <th style="padding: 10px;">Total Belanja</th>
+                    <th class="no-print" style="padding: 10px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="riwayatTransaksiTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. KASBON / PIUTANG TAB -->
+        <div id="kasbonTab" class="tab-content">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="font-size: 1.3rem; color: #1e293b;">📑 Data Kasbon / Piutang Pelanggan</h2>
+            <button class="btn btn-primary" onclick="toggleForm('kasbonFormCard', 'kasbonToggleIcon')">
+              <span id="kasbonToggleIcon">▲</span> Tambah Data Pelanggan Kasbon
+            </button>
+          </div>
+
+          <!-- Form Kasbon -->
+          <div id="kasbonFormCard" class="card collapsed" style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+            <h3 style="font-size: 1rem; margin-bottom: 15px; color: #334155;">Form Pelanggan Kasbon</h3>
+            <form id="kasbonForm" onsubmit="saveKasbon(event)">
+              <input type="hidden" id="kasbonEditIndex">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Tanggal</label>
+                  <input type="date" id="kasbonTgl" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Nama Pelanggan</label>
+                  <input type="text" id="kasbonNama" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">No. Telp / WhatsApp</label>
+                  <input type="text" id="kasbonTelp" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Alamat</label>
+                  <input type="text" id="kasbonAlamat" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600;">Status Piutang</label>
+                  <select id="kasbonStatus" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="Belum Lunas">Belum Lunas</option>
+                    <option value="Lunas">Lunas</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" id="btnSimpanKasbon" class="btn btn-success" style="background: #16a34a; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">✅ Simpan Kasbon</button>
+                <button type="button" id="btnBatalEditKasbon" class="btn btn-secondary hidden" onclick="resetKasbonForm()" style="background: #64748b; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tabel Kasbon -->
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+              <input type="text" id="searchKasbonInput" class="form-control" placeholder="Cari nama pelanggan kasbon..." oninput="renderKasbonTable()" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; width: 250px;">
+              <button class="btn btn-danger" onclick="hapusKasbonTerpilih()" style="background: #dc2626; color: #fff; border:none; padding: 8px 12px; border-radius: 6px; cursor:pointer;">🗑️ Hapus Terpilih</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 10px; width: 40px; text-align: center;"><input type="checkbox" id="selectAllKasbonCheckbox" onclick="toggleSelectAllKasbon(this)"></th>
+                    <th style="padding: 10px;">No</th>
+                    <th style="padding: 10px;">Tanggal</th>
+                    <th style="padding: 10px;">Nama Pelanggan</th>
+                    <th style="padding: 10px;">Status Piutang</th>
+                    <th style="padding: 10px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="kasbonTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. LAPORAN & CETAK TAB -->
+        <div id="laporanTab" class="tab-content">
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;" class="no-print">
+            <h2 style="font-size: 1.3rem; margin-bottom: 15px; color: #1e293b;">📊 Filter & Cetak Laporan Penjualan</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+              <div>
+                <label style="font-size: 0.85rem; font-weight: 600;">Pilih Barang</label>
+                <select id="laporanBarangSelect" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  <option value="">-- Semua Barang --</option>
                 </select>
               </div>
-              <div class="form-group"><label>Masa Aktif / Exp</label><input type="date" id="barExpired" class="form-control" required></div>
-              <div class="form-group"><label>Batas Peringatan Exp (Hari)</label><input type="number" id="barMinExpDays" class="form-control" required value="15"></div>
-              <div class="form-group"><label>Harga Modal</label><input type="number" id="barHargaModal" class="form-control" readonly required></div>
-              <div class="form-group"><label>Harga Jual</label><input type="number" id="barHargaJual" class="form-control" readonly required></div>
-            </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-              <button type="submit" class="btn btn-primary">Simpan Stok Barang</button>
-              <button type="button" class="btn btn-secondary" onclick="resetBarangForm()">Batal</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-          <div class="table-header-tools">
-            <h2>Tampilan Data Barang & Barcode Per Produk</h2>
-            <input type="text" id="searchBarangInput" class="form-control" placeholder="Cari barang..." oninput="renderBarangTable()" style="max-width: 250px;">
-          </div>
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllBarangCheckbox" onclick="toggleSelectAllBarang(this)"></th>
-                  <th>No</th><th>Kode Barcode</th><th>Nama Barang</th><th>Stok</th><th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="barangTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 4: KASIR -->
-      <section id="kasirTab" class="tab-content">
-        <div class="card">
-          <h2 id="kasirFormTitle" style="font-size: 1.2rem; margin-bottom: 15px; color: #0f172a;">🛒 Transaksi Kasir</h2>
-          <input type="hidden" id="transaksiEditIndex">
-          <div class="kasir-grid">
-            <div>
-              <div class="form-group" style="position: relative; margin-bottom: 15px;">
-                <label>Cari / Ketik Nama Barang / Kode Barcode:</label>
-                <input type="text" id="kasirBarangInput" class="form-control" placeholder="Ketik nama atau scan..." oninput="onKetikCariBarang()" autocomplete="off">
-                <input type="hidden" id="selectedKasirBarangIndex">
-                <div id="autocompleteDropdown" class="autocomplete-box hidden"></div>
+              <div>
+                <label style="font-size: 0.85rem; font-weight: 600;">Dari Tanggal</label>
+                <input type="date" id="laporanTglDari" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
               </div>
-              <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                <div class="form-group" style="flex: 1;"><label>Jumlah Beli:</label><input type="number" id="kasirQty" class="form-control" value="1" min="1"></div>
-                <div style="align-self: flex-end;"><button type="button" class="btn btn-success" onclick="tambahItemKeranjang()" style="padding: 10px 20px;">➕ Tambah ke Keranjang</button></div>
+              <div>
+                <label style="font-size: 0.85rem; font-weight: 600;">Sampai Tanggal</label>
+                <input type="date" id="laporanTglSampai" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-          <h3>Daftar Item Belanjaan</h3>
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr><th>No</th><th>Nama Barang</th><th>Barcode</th><th>Harga Satuan</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr>
-              </thead>
-              <tbody id="keranjangTbody"></tbody>
-            </table>
-          </div>
-          <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-            <div>
-              <div style="font-size: 0.9rem; color: #64748b;">TOTAL BELANJA:</div>
-              <div id="kasirTotalDisplay" style="font-size: 1.6rem; font-weight: bold; color: #4f46e5;">Rp 0</div>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 250px;">
-              <div class="form-group"><label style="font-size: 0.8rem;">Nama Kasbon (Opsional):</label><input type="text" id="kasirNamaKasbon" class="form-control" list="listKasbonNama" placeholder="Nama pelanggan..."></div>
-              <div class="form-group"><label style="font-size: 0.8rem;">Tunai Dibayar:</label><input type="number" id="kasirBayar" class="form-control" placeholder="0" oninput="hitungKembalian()"></div>
-              <div><span>Kembalian: </span><span id="kasirKembalianDisplay" style="font-size: 1.1rem; font-weight: bold; color: #16a34a;">Rp 0</span></div>
-              <button type="button" class="btn btn-success" id="btnSimpanTransaksi" onclick="prosesPembayaran()">✅ Selesaikan Transaksi</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="filterLaporan()" style="background: #4f46e5; color: #fff; border:none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">🔍 Tampilkan Laporan</button>
+              <button class="btn btn-success" onclick="cetakSemuaLaporanKeseluruhan()" style="background: #16a34a; color: #fff; border:none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">🖨️ Cetak Seluruh Laporan</button>
             </div>
           </div>
-        </div>
-      </section>
 
-      <!-- TAB 5: SCANNER -->
-      <section id="scannerTab" class="tab-content">
-        <div class="scanner-container">
-          <div class="scanner-header"><h2>📷 Scanner Barcode Barang</h2></div>
-          <div class="card scanner-box">
-            <div id="reader"></div>
-            <div class="scanner-status" id="scannerStatus">Mengarahkan kamera ke barcode...</div>
-            <input type="text" id="scanResultCode" class="form-control" placeholder="Atau ketik barcode..." oninput="cariProdukByBarcodeScanner(this.value)" style="margin-top: 15px; text-align: center;">
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 6: DATA TRANSAKSI -->
-      <section id="transaksiTab" class="tab-content">
-        <div class="card print-area">
-          <div class="table-header-tools">
-            <h2 id="riwayatHeaderTitle">📜 Riwayat Data Transaksi Penjualan</h2>
-            <button type="button" class="btn btn-success no-print" onclick="window.print()">🖨️ Cetak Rekap</button>
-          </div>
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th class="no-print" style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllTrxCheckbox" onclick="toggleSelectAllTransaksi(this)"></th>
-                  <th>No</th><th>Nama Barang</th><th style="text-align: center;">Nama Kasbon</th><th>Waktu</th><th>Total</th><th class="no-print">Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="riwayatTransaksiTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 7: KASBON -->
-      <section id="kasbonTab" class="tab-content">
-        <div class="card collapsible-card collapsed" id="kasbonFormCard">
-          <div class="card-header" onclick="toggleForm('kasbonFormCard', 'kasbonToggleIcon')">
-            <h2>📑 Form Input Kasbon / Piutang</h2>
-            <span id="kasbonToggleIcon">...</span>
-          </div>
-          <form id="kasbonForm" onsubmit="saveKasbon(event)" class="card-body">
-            <input type="hidden" id="kasbonEditIndex">
-            <div class="form-grid">
-              <div class="form-group"><label>Tanggal</label><input type="date" id="kasbonTgl" class="form-control" required></div>
-              <div class="form-group"><label>Nama Pelanggan</label><input type="text" id="kasbonNama" class="form-control" required></div>
-              <div class="form-group"><label>No. Telp / WA</label><input type="text" id="kasbonTelp" class="form-control"></div>
-              <div class="form-group"><label>Alamat</label><input type="text" id="kasbonAlamat" class="form-control"></div>
+          <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #1e293b;">Hasil Laporan Penjualan</h3>
+            <div class="table-responsive">
+              <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f8fafc; text-align: left; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 10px;">No</th>
+                    <th style="padding: 10px;">Tanggal</th>
+                    <th style="padding: 10px;">Nama Barang</th>
+                    <th style="padding: 10px; text-align: center;">Pelanggan / Kasbon</th>
+                    <th style="padding: 10px;">Qty</th>
+                    <th style="padding: 10px;">Total</th>
+                    <th class="no-print" style="padding: 10px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="laporanTbody"></tbody>
+              </table>
             </div>
-            <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Simpan Kasbon</button>
-          </form>
-        </div>
-        <div class="card" style="margin-top: 20px;">
-          <h2>Daftar Kasbon / Piutang</h2>
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr><th>No</th><th>Tanggal</th><th>Nama</th><th>Status</th><th>Aksi</th></tr>
-              </thead>
-              <tbody id="kasbonTbody"></tbody>
-            </table>
           </div>
         </div>
-      </section>
 
-      <!-- TAB 8: LAPORAN -->
-      <section id="laporanTab" class="tab-content">
-        <div class="card">
-          <h2>📊 Laporan Penjualan</h2>
-          <button type="button" class="btn btn-success" onclick="window.print()" style="margin-top: 10px;">🖨️ Cetak Laporan</button>
+        <!-- 9. PANDUAN APLIKASI TAB -->
+        <div id="panduanTab" class="tab-content">
+          <div style="background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; line-height: 1.6;">
+            <h2 style="font-size: 1.4rem; color: #1e293b; margin-bottom: 15px;">📖 Panduan Penggunaan APLIKASI KASIR</h2>
+            <ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: #334155;">
+              <li><b>Data Pengeluaran & Barcode:</b> Catat pembelian modal barang Anda di sini. Barcode permanen akan otomatis tergenerate untuk setiap barang.</li>
+              <li><b>Data Barang:</b> Atur stok, harga jual, tanggal kadaluarsa, dan cetak QR/Barcode produk atau Master QR Toko.</li>
+              <li><b>Transaksi Kasir:</b> Lakukan penjualan barang secara tunai atau catat piutang (kasbon). Stok akan otomatis berkurang secara sinkron.</li>
+              <li><b>Scanner Barcode:</b> Scan produk menggunakan kamera HP atau Google Lens/Upload untuk langsung masuk ke halaman kasir tanpa login[cite: 6].</li>
+              <li><b>Master QR Toko:</b> Satu barcode permanen yang merangkum seluruh data stok, transaksi, dan kasbon untuk kemudahan operasional lintas perangkat.</li>
+            </ol>
+          </div>
         </div>
-      </section>
 
-      <!-- TAB 9: PANDUAN -->
-      <section id="panduanTab" class="tab-content">
-        <div class="card">
-          <h2>📖 Panduan APLIKASI KASIR</h2>
-          <p>Sinkronisasi data barang, kasir, dan kasbon terhubung secara otomatis menggunakan QR Code Universal di menu Data Barang.</p>
-        </div>
-      </section>
+        <!-- 10. PROFIL & PENGATURAN TAB -->
+        <div id="profilTab" class="tab-content">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <!-- Pengaturan Toko -->
+            <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #1e293b;">Pengaturan Profil Toko</h3>
+              <form onsubmit="saveProfilToko(event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 0.85rem; font-weight: 600;">ID Toko / URL Key</label>
+                  <input type="text" id="tokoStoreId" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 0.85rem; font-weight: 600;">Nama Toko</label>
+                  <input type="text" id="tokoNama" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 0.85rem; font-weight: 600;">No. Telp</label>
+                  <input type="text" id="tokoTelp" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 0.85rem; font-weight: 600;">Alamat</label>
+                  <textarea id="tokoAlamat" class="form-control" rows="2" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 0.85rem; font-weight: 600;">Catatan / Footer Struk</label>
+                  <input type="text" id="tokoNotes" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                  <label style="font-size: 0.85rem; font-weight: 600;">Logo Toko</label>
+                  <input type="file" id="tokoLogoFile" accept="image/*" onchange="previewLogo(event)" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  <div style="margin-top: 10px; text-align: center;">
+                    <img id="previewLogoImg" src="" class="hidden" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+                    <span id="previewLogoIcon" style="font-size: 2rem;">🖼️</span>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="hapusLogoToko()" style="display: block; margin: 5px auto; background: #dc2626; color: #fff; border:none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Hapus Logo</button>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Simpan Pengaturan Toko</button>
+              </form>
+            </div>
 
-      <!-- TAB 10: PROFIL -->
-      <section id="profilTab" class="tab-content">
-        <div class="card">
-          <h2>⚙️ Profil & Toko</h2>
-          <form onsubmit="saveProfilToko(event)">
-            <div class="form-group"><label>Nama Toko</label><input type="text" id="tokoNama" class="form-control" required></div>
-            <div class="form-group"><label>Telepon</label><input type="text" id="tokoTelp" class="form-control" required></div>
-            <div class="form-group"><label>Alamat</label><textarea id="tokoAlamat" class="form-control" required></textarea></div>
-            <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Simpan Profil</button>
-          </form>
+            <!-- Pengaturan Akun & Backup Data -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #1e293b;">Akun Admin & Password</h3>
+                <form onsubmit="saveProfilAdmin(event)">
+                  <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 0.85rem; font-weight: 600;">Username</label>
+                    <input type="text" id="profilUsername" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 0.85rem; font-weight: 600;">Password Baru (Kosongkan jika tetap)</label>
+                    <input type="password" id="profilPassword" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-size: 0.85rem; font-weight: 600;">Foto Profil Admin</label>
+                    <input type="file" id="profilAvatarFile" accept="image/*" onchange="previewAvatar(event)" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <div style="margin-top: 10px; text-align: center;">
+                      <img id="previewAvatarImg" src="" class="hidden" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+                      <span id="previewAvatarIcon" style="font-size: 2rem;">👤</span>
+                      <button type="button" class="btn btn-danger btn-sm" onclick="hapusFotoAdmin()" style="display: block; margin: 5px auto; background: #dc2626; color: #fff; border:none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Hapus Foto</button>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Perbarui Akun</button>
+                </form>
+              </div>
+
+              <!-- Backup & Restore Data JSON -->
+              <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 15px; color: #1e293b;">Backup & Restore Data JSON</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                  <button class="btn btn-success" onclick="exportDataApp()" style="background: #16a34a; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">📥 Export Backup JSON</button>
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Import File Backup (.json)</label>
+                  <input type="file" id="importFileJson" accept=".json" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px;">
+                  <button class="btn btn-primary" onclick="importDataApp()" style="background: #4f46e5; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">📤 Restore Data</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+
+      </div>
     </main>
+  </div>
+
+  <!-- MODAL CETAK NOTA STRUK -->
+  <div id="printModalOverlay" class="modal-overlay hidden" onclick="if(event.target.id==='printModalOverlay') closePrintModal()">
+    <div class="modal-card" style="background: #fff; padding: 20px; border-radius: 8px; width: 320px; max-width: 90%; margin: 50px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+      <div id="printReceiptContent" style="font-family: monospace; font-size: 0.85rem; color: #000; margin-bottom: 15px;"></div>
+      <div style="display: flex; gap: 10px;" class="no-print">
+        <button class="btn btn-success" onclick="triggerWindowPrint()" style="flex: 1; background: #16a34a; color: #fff; border:none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Cetak</button>
+        <button class="btn btn-secondary" onclick="closePrintModal()" style="flex: 1; background: #64748b; color: #fff; border:none; padding: 8px; border-radius: 6px; cursor: pointer;">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QR CODE KASIR PER ITEM -->
+  <div id="qrKasirModalOverlay" class="modal-overlay hidden" onclick="if(event.target.id==='qrKasirModalOverlay') closeQrKasirModal()">
+    <div class="modal-card" style="background: #fff; padding: 25px; border-radius: 12px; width: 340px; max-width: 90%; margin: 50px auto; text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,0.2);">
+      <h3 id="qrModalItemTitle" style="font-size: 1.1rem; color: #1e293b; margin-bottom: 5px;">Nama Barang</h3>
+      <p id="qrModalItemCode" style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px; font-family: monospace;">Kode: -</p>
+      <div id="qrModalCanvasContainer" style="display: inline-block; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;"></div>
+      <p style="font-size: 0.75rem; color: #16a34a; font-weight: bold; margin-bottom: 15px;">Scan dengan Google Lens / Kamera HP untuk langsung buka Kasir[cite: 6]</p>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-success" onclick="downloadQrKasirPng()" style="flex: 1; background: #16a34a; color: #fff; border:none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer;">📥 Unduh PNG</button>
+        <button class="btn btn-secondary" onclick="closeQrKasirModal()" style="flex: 1; background: #64748b; color: #fff; border:none; padding: 8px; border-radius: 6px; cursor: pointer;">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MASTER QR TOKO -->
+  <div id="qrMasterModalOverlay" class="modal-overlay hidden" onclick="if(event.target.id==='qrMasterModalOverlay') closeQrMasterModal()">
+    <div class="modal-card" style="background: #fff; padding: 25px; border-radius: 12px; width: 360px; max-width: 90%; margin: 50px auto; text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,0.2);">
+      <h3 id="qrMasterModalTitle" style="font-size: 1.2rem; color: #1e293b; margin-bottom: 5px;">APLIKASI KASIR</h3>
+      <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">Master QR Code (Sinkronisasi Seluruh Stok & Data)</p>
+      <div id="qrMasterCanvasContainer" style="display: inline-block; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px;"></div>
+      <div style="margin-bottom: 15px;">
+        <input type="text" id="qrMasterUrlInput" readonly style="width: 100%; padding: 6px; font-size: 0.7rem; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; background: #f8fafc;" onclick="this.select()">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-success" onclick="downloadQrMasterPng()" style="flex: 1; background: #16a34a; color: #fff; border:none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer;">📥 Unduh QR Master</button>
+        <button class="btn btn-secondary" onclick="closeQrMasterModal()" style="flex: 1; background: #64748b; color: #fff; border:none; padding: 8px; border-radius: 6px; cursor: pointer;">Tutup</button>
+      </div>
+    </div>
   </div>
 
   <script src="script.js"></script>
