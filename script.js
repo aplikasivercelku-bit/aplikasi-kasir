@@ -20,7 +20,7 @@ let adminCreds = JSON.parse(localStorage.getItem('sembako_admin')) || {
 };
 
 let tokoProfile = JSON.parse(localStorage.getItem('sembako_toko')) || {
-  nama: 'APLIKASI KASIR',
+  nama: 'CAFFE SANTAI HIHIHI',
   telp: '087877611218',
   alamat: 'Jl. Bojonegoro Kp. Kernaden rt 05 05',
   notes: 'Terima kasih atas kunjungan Anda!',
@@ -101,7 +101,6 @@ function aktifkanTampilanHalamanBarcodeSaja() {
 }
 
 function getKasirBarcodeUrl() {
-  // Dipersingkat agar string data QR tidak terlalu padat dan mudah dibaca Google Lens / Scanner HP
   const loc = window.location;
   return `${loc.origin}${loc.pathname}?mode=kasir`;
 }
@@ -115,13 +114,12 @@ function bukaModalQrMaster() {
   const qrContainer = document.getElementById('qrMasterContainer');
 
   const targetUrl = getKasirBarcodeUrl();
-  if (storeTitleEl) storeTitleEl.innerText = tokoProfile.nama || 'APLIKASI KASIR';
+  if (storeTitleEl) storeTitleEl.innerText = tokoProfile.nama || 'CAFFE SANTAI HIHIHI';
   if (urlInputEl) urlInputEl.value = targetUrl;
 
   if (qrContainer) {
     qrContainer.innerHTML = "";
     
-    // Tata letak rapi, responsif, dan tidak terpotong di tepi kotak
     qrContainer.style.display = "flex";
     qrContainer.style.justifyContent = "center";
     qrContainer.style.alignItems = "center";
@@ -130,7 +128,7 @@ function bukaModalQrMaster() {
     qrContainer.style.boxSizing = "border-box";
     qrContainer.style.overflow = "hidden";
 
-    // Menggunakan CorrectLevel M agar kerapatan titik QR lebih longgar dan mudah di-scan Google Lens
+    // Menggunakan CorrectLevel M agar QR Code lebih mudah dipindai Google Lens / kamera HP
     new QRCode(qrContainer, {
       text: targetUrl,
       width: 180,
@@ -170,36 +168,119 @@ function unduhKartuQrMasterPNG() {
   const drawCardAndDownload = (imgSource) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = 420;
-    canvas.height = 500;
+    canvas.width = 500;
+    canvas.height = 680;
 
-    ctx.fillStyle = "#ffffff";
+    // Background luar abu-abu lembut
+    ctx.fillStyle = "#f1f5f9";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Kartu Putih Utama dengan sudut melengkung
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.roundRect(20, 20, canvas.width - 40, canvas.height - 40, 16);
+    ctx.fill();
     ctx.strokeStyle = "#e2e8f0";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Icon Header Kotak Oranye (CS)
+    ctx.fillStyle = "#ea580c";
+    ctx.beginPath();
+    ctx.roundRect(40, 40, 50, 50, 10);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 18px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("CS", 65, 65);
+
+    // Header Title & Subtitle
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 20px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("MENU DIGITAL", 105, 63);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "12px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Pesan Cepat Tanpa Antre", 105, 83);
+
+    // Lencana SCAN ORDER Kanan Atas
+    ctx.fillStyle = "#fff1f2";
+    ctx.beginPath();
+    ctx.roundRect(355, 42, 105, 36, 8);
+    ctx.fill();
+    ctx.strokeStyle = "#fecdd3";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "#e11d48";
+    ctx.font = "bold 12px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("SCAN ORDER", 407, 60);
+
+    // Garis Pemisah Tipis
+    ctx.strokeStyle = "#f1f5f9";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, 110);
+    ctx.lineTo(460, 110);
+    ctx.stroke();
+
+    // Nama Toko
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 22px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText((tokoProfile.nama || "CAFFE SANTAI HIHIHI").toUpperCase(), canvas.width / 2, 145);
+
+    // Subtitle / Nama Pemilik & Kontak
+    ctx.fillStyle = "#64748b";
+    ctx.font = "13px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(`OLAN MAULANA • Telp: ${tokoProfile.telp || '087877611218'}`, canvas.width / 2, 168);
+
+    // Kotak Bingkai QR Code Putih di Tengah
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(90, 190, 320, 320, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // Gambar QR Code
+    ctx.drawImage(imgSource, 115, 215, 270, 270);
+
+    // Kotak Tagline Bawah QR
+    ctx.fillStyle = "#f8fafc";
+    ctx.beginPath();
+    ctx.roundRect(40, 530, 420, 60, 10);
+    ctx.fill();
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     ctx.fillStyle = "#0f172a";
-    ctx.font = "bold 24px 'Segoe UI', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").toUpperCase(), canvas.width / 2, 62);
-
-    ctx.strokeStyle = "#cbd5e1";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(75, 90, 270, 270);
-
-    ctx.drawImage(imgSource, 95, 110, 230, 230);
-
-    ctx.fillStyle = "#ecfdf5";
-    ctx.fillRect(40, 385, 340, 75);
-    ctx.fillStyle = "#16a34a";
     ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText("Scan QR untuk membuka halaman", canvas.width / 2, 416);
-    ctx.fillText("Transaksi Kasir tanpa login", canvas.width / 2, 438);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("SATU BARCODE UNTUK SEMUA MENU", canvas.width / 2, 555);
+
+    ctx.fillStyle = "#16a34a";
+    ctx.font = "12px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("Scan menggunakan Kamera HP / Google Lens untuk memesan", canvas.width / 2, 575);
+
+    // Footer Info (ID Toko & WhatsApp Pesanan)
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "11px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`ID Toko: ${tokoProfile.nama ? tokoProfile.nama.toLowerCase().replace(/\s+/g, '-') : 'caffe-santai-hihihi'}`, 45, 625);
+
+    ctx.textAlign = "right";
+    ctx.fillText(`WhatsApp Pesanan: +${tokoProfile.telp || '6287877611218'}`, 455, 625);
 
     const a = document.createElement('a');
-    a.download = `Kartu_QR_Kasir_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
+    a.download = `Kartu_QR_Menu_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
     a.href = canvas.toDataURL('image/png');
     document.body.appendChild(a);
     a.click();
@@ -1611,7 +1692,6 @@ function initScannerCamera() {
     config, 
     (decodedText) => {
       const currentTime = Date.now();
-      // Jeda pembatasan scan duplikat dalam 1.5 detik agar bisa scan berulang kali secara responsif
       if (decodedText === lastScannedCode && (currentTime - lastScannedTime < 1500)) return;
       lastScannedCode = decodedText;
       lastScannedTime = currentTime;
@@ -2879,7 +2959,7 @@ function saveProfilToko(e) {
   e.preventDefault();
   tokoProfile.nama = document.getElementById('tokoNama').value;
   tokoProfile.telp = document.getElementById('tokoTelp').value;
-  tokoProfile.alamat = document.encodeURIComponent ? document.getElementById('tokoAlamat').value : document.getElementById('tokoAlamat').value;
+  tokoProfile.alamat = document.getElementById('tokoAlamat').value;
   tokoProfile.notes = document.getElementById('tokoNotes').value;
   if(tempLogoBase64) tokoProfile.logo = tempLogoBase64;
 
