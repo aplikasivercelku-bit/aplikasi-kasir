@@ -34,7 +34,6 @@ let currentLightboxTitle = "";
 let currentQrModalKode = "";
 let currentQrModalNama = "";
 
-// Helper Encode & Decode Data Barang ke URL QR agar HP otomatis sinkron dari Laptop
 function encodeDataToUrlParam(obj) {
   try {
     const jsonStr = JSON.stringify(obj);
@@ -53,19 +52,16 @@ function decodeDataFromUrlParam(base64Str) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// 1. INISIALISASI & SINKRONISASI OTOMATIS DATA BARANG DARI QR KE HP
-// ---------------------------------------------------------------------------
+// INISIALISASI & SINKRONISASI OTOMATIS DATA BARANG DARI QR KE HP
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const scanParam = params.get('scan') || params.get('barcode') || params.get('kode');
   const modeParam = params.get('mode');
   const storeParam = params.get('store');
-  const syncItemsParam = params.get('items'); // Data seluruh barang dari QR Master
-  const syncSingleItemParam = params.get('item'); // Data 1 barang dari QR Langsung Kasir
+  const syncItemsParam = params.get('items');
+  const syncSingleItemParam = params.get('item');
   const tokoNameParam = params.get('toko');
 
-  // 1. Jika QR Master membawa data seluruh barang (?items=...), simpan otomatis ke HP!
   if (syncItemsParam) {
     const importedItems = decodeDataFromUrlParam(syncItemsParam);
     if (Array.isArray(importedItems) && importedItems.length > 0) {
@@ -92,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 2. Jika QR Langsung Kasir per item membawa data barang (?item=...), simpan otomatis ke HP!
   if (syncSingleItemParam) {
     const imp = decodeDataFromUrlParam(syncSingleItemParam);
     if (imp && imp.k) {
@@ -129,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadProfilData();
 
-  // JIKA DIAKSES MELALUI SCAN BARCODE ATAU QR MASTER KESELURUHAN
   if (scanParam || modeParam === 'all') {
     sessionStorage.setItem('sembako_logged_in', 'true');
     if (modeParam === 'all') {
@@ -177,6 +171,31 @@ document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('kasbonTgl')) document.getElementById('kasbonTgl').value = today;
 });
 
+// FUNGSI UNTUK MENU TITIK TIGA DI SIDEBAR
+function toggleAdminMenuDropdown(e) {
+  if(e) e.stopPropagation();
+  const dropdown = document.getElementById('adminMenuDropdown');
+  if(dropdown) {
+    dropdown.classList.toggle('hidden');
+  }
+}
+
+// Tutup dropdown jika mengklik di luar area menu titik tiga
+window.addEventListener('click', function(e) {
+  if(!e.target.closest('.admin-dropdown-wrapper')) {
+    const dropdown = document.getElementById('adminMenuDropdown');
+    if(dropdown && !dropdown.classList.contains('hidden')) {
+      dropdown.classList.add('hidden');
+    }
+  }
+});
+
+function bukaPengaturanAdmin() {
+  const dropdown = document.getElementById('adminMenuDropdown');
+  if(dropdown) dropdown.classList.add('hidden');
+  showTab('profilTab');
+}
+
 function aturMenuKasirSaja() {
   const sidebarMenu = document.getElementById('sidebarMenuContainer');
   if (sidebarMenu) {
@@ -185,11 +204,6 @@ function aturMenuKasirSaja() {
       <button class="nav-btn" data-tab="scannerTab" onclick="showTab('scannerTab')">📷 Scanner Barcode</button>
       <button class="nav-btn" data-tab="transaksiTab" onclick="showTab('transaksiTab')">📜 Data Transaksi</button>
       <button class="nav-btn" data-tab="kasbonTab" onclick="showTab('kasbonTab')">📑 Kasbon / Piutang</button>
-      <div class="sidebar-user-section" style="margin-top: 20px;">
-        <div class="user-info">
-          <span>🛒 Mode Kasir HP (${barangList.length} Barang)</span>
-        </div>
-      </div>
     `;
   }
 }
@@ -506,9 +520,7 @@ function navigateToBarang(idx) {
   }, 150);
 }
 
-// ---------------------------------------------------------------------------
-// 2. DATA PENGELUARAN & SINKRONISASI PERMANEN KE DATA BARANG
-// ---------------------------------------------------------------------------
+// DATA PENGELUARAN & SINKRONISASI
 function toggleSelectAllPengeluaran(source) {
   document.querySelectorAll('.pengeluaran-checkbox').forEach(cb => { cb.checked = source.checked; });
 }
@@ -643,9 +655,7 @@ function resetPengeluaranForm() {
   toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
 }
 
-// ---------------------------------------------------------------------------
-// 3. DATA BARANG, QR MASTER & BARCODE PERMANEN (DENGAN SINKRONISASI DATA KE HP)
-// ---------------------------------------------------------------------------
+// DATA BARANG & QR
 function toggleSelectAllBarang(source) {
   document.querySelectorAll('.barang-checkbox').forEach(cb => { cb.checked = source.checked; });
 }
@@ -775,12 +785,10 @@ function renderBarangTable() {
   });
 }
 
-// QR MASTER KESELURUHAN: SEMATKAN SELURUH DATA BARANG AGAR HP OTOMATIS SINKRON!
 function bukaModalQrMasterBarang() {
   const storeId = tokoProfile.storeId || "aplikasi-kasir-utama";
   const baseUrl = window.location.origin + window.location.pathname;
 
-  // Ringkas data barang agar QR tetap tajam dan terbaca HP
   const compactItems = barangList.map(b => ({
     k: b.kode,
     n: b.nama,
@@ -858,7 +866,6 @@ function downloadQrMasterPng() {
   link.click();
 }
 
-// QR LANGSUNG KASIR PER ITEM: SEMATKAN DATA BARANGNYA AGAR HP OTOMATIS MENGENALI!
 function bukaModalQrKasir(kode, nama = "") {
   if (!kode) return;
   const barang = barangList.find(b => b.kode === kode);
@@ -1114,9 +1121,7 @@ function resetBarangForm() {
   toggleForm('barangFormCard', 'barangToggleIcon');
 }
 
-// ---------------------------------------------------------------------------
-// 4. TRANSAKSI KASIR, AUTOCOMPLETE & ALUR OTOMATIS KASBON VS DATA TRANSAKSI
-// ---------------------------------------------------------------------------
+// TRANSAKSI KASIR
 function onKetikCariBarang() {
   const rawInput = document.getElementById('kasirBarangInput').value.trim();
   const keyword = rawInput.toLowerCase();
@@ -1529,9 +1534,7 @@ function resetKasirForm() {
   renderKeranjang();
 }
 
-// ---------------------------------------------------------------------------
-// 5. SCANNER KAMERA / UPLOAD
-// ---------------------------------------------------------------------------
+// SCANNER KAMERA / UPLOAD
 function speakSuccessMessage(namaBarang) {
   try {
     if ('speechSynthesis' in window) {
@@ -1686,9 +1689,7 @@ function kirimHasilScanKeKasir() {
   selectedProdukAktif = null;
 }
 
-// ---------------------------------------------------------------------------
-// 6. KASBON, TRANSAKSI, LAPORAN & PROFIL
-// ---------------------------------------------------------------------------
+// KASBON & TRANSAKSI
 function toggleSelectAllKasbon(source) {
   document.querySelectorAll('.kasbon-checkbox').forEach(cb => { cb.checked = source.checked; });
 }
@@ -2307,16 +2308,3 @@ function importDataApp() {
 function formatNumber(num) {
   return new Intl.NumberFormat('id-ID').format(num);
 }
-
-function toggleAdminMenuDropdown(e) {
-  if(e) e.stopPropagation();
-  const dropdown = document.getElementById('adminMenuDropdown');
-  if(dropdown) dropdown.classList.add('hidden');
-}
-
-window.addEventListener('click', function(e) {
-  if(!e.target.closest('.admin-dropdown-wrapper')) {
-    const dropdown = document.getElementById('adminMenuDropdown');
-    if(dropdown) dropdown.classList.add('hidden');
-  }
-});
