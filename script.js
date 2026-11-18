@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('appContainer').classList.remove('hidden');
     
     if (modeParam === 'kasir') {
-      showTab('kasirTab');
+      isBarcodeModeKasirOnly = true;
+      aktifkanTampilanHalamanBarcodeSaja();
     } else {
       showTab('berandaTab');
     }
@@ -333,7 +334,15 @@ function handleLogin(e) {
     localStorage.setItem('sembako_logged_in', 'true');
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
-    showTab('berandaTab');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || (window.location.search.includes('sto') ? 'kasir' : '');
+    if (modeParam === 'kasir') {
+      isBarcodeModeKasirOnly = true;
+      aktifkanTampilanHalamanBarcodeSaja();
+    } else {
+      showTab('berandaTab');
+    }
   } else {
     alert("Username atau Password salah! (Default: admin / admin)");
   }
@@ -342,14 +351,30 @@ function handleLogin(e) {
 function logout() {
   if(confirm("Keluar dari sesi ini dan kembali ke halaman login?")) {
     localStorage.removeItem('sembako_logged_in');
-    document.getElementById('appContainer').classList.add('hidden');
-    document.getElementById('loginPage').classList.remove('hidden');
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
+    
+    // Jika diakses via mode kasir barcode, kembali ke mode kasir saja alih-alih form login admin
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode') || (window.location.search.includes('sto') ? 'kasir' : '');
+    
+    if (modeParam === 'kasir') {
+      isBarcodeModeKasirOnly = true;
+      aktifkanTampilanHalamanBarcodeSaja();
+    } else {
+      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('loginPage').classList.remove('hidden');
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
   }
 }
 
 function showTab(tabId) {
+  if (isBarcodeModeKasirOnly) {
+    if (tabId !== 'kasirTab' && tabId !== 'transaksiTab' && tabId !== 'kasbonTab') {
+      tabId = 'kasirTab';
+    }
+  }
+
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
