@@ -6,7 +6,6 @@
   <title id="browserPageTitle">APLIKASI KASIR</title>
   <link id="browserFavicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏪</text></svg>">
   <link rel="stylesheet" href="style.css">
-  <!-- Library JsBarcode & QRCode -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -189,12 +188,12 @@
         </div>
       </section>
 
-      <!-- TAB 3: DATA BARANG (DENGAN QR CODE KESELURUHAN DI SINI) -->
+      <!-- TAB 3: DATA BARANG (DENGAN QR CODE KESELURUHAN) -->
       <section id="barangTab" class="tab-content">
-        <!-- QR CODE UNIVERSAL / KESELURUHAN (SEPERTI GAMBAR 2) -->
+        <!-- QR CODE UNIVERSAL / KESELURUHAN -->
         <div class="card" style="text-align: center; background: #ffffff; margin-bottom: 20px;">
           <h2 style="font-size: 1.1rem; margin-bottom: 5px; color: #0f172a;" id="qrCardTitle">QR TOKO SEMBAKO (Keseluruhan Barang)</h2>
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Scan QR ini dengan HP / Google Lens untuk langsung membuka Transaksi Kasir tanpa login[cite: 9].</p>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Scan QR ini dengan HP / Google Lens untuk langsung membuka Transaksi Kasir tanpa login[cite: 5, 9].</p>
           <div style="display: inline-block; padding: 15px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;" id="universalQRCodeContainer"></div>
           <div id="universalQRUrlText" style="font-size: 0.75rem; color: #64748b; margin-top: 10px; word-break: break-all;"></div>
           <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
