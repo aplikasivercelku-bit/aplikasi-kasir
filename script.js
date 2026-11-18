@@ -6,7 +6,7 @@ let keranjangList = [];
 
 let adminCreds = JSON.parse(localStorage.getItem('sembako_admin')) || { username: 'admin', password: 'admin' };
 let tokoProfile = JSON.parse(localStorage.getItem('sembako_toko')) || {
-  nama: 'APLIKASI KASIR',
+  nama: 'TOKO SEMBAKO',
   telp: '087877611218',
   alamat: 'Jl. Bojonegoro Kp. Kernaden rt 05 05'
 };
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPengeluaranTable();
   renderRiwayatTransaksi();
   renderKasbonTable();
-  renderUniversalBarcode();
+  renderUniversalQRCode();
   updateDashboardStats();
 });
 
@@ -33,7 +33,7 @@ function handleLogin(e) {
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     showTab('berandaTab');
-    renderUniversalBarcode();
+    renderUniversalQRCode();
   } else { alert("Login Salah!"); }
 }
 
@@ -44,7 +44,7 @@ function showTab(tabId) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
   document.querySelector(`.nav-btn[data-tab="${tabId}"]`)?.classList.add('active');
-  if(tabId === 'barangTab' || tabId === 'berandaTab') renderUniversalBarcode();
+  if(tabId === 'barangTab' || tabId === 'berandaTab') renderUniversalQRCode();
 }
 
 function saveDataToStorage() {
@@ -55,40 +55,53 @@ function saveDataToStorage() {
   localStorage.setItem('sembako_toko', JSON.stringify(tokoProfile));
 }
 
-function renderUniversalBarcode() {
-  const barcodeKeyword = tokoProfile.nama.replace(/\s+/g, '-').toUpperCase();
-  const svgEl = document.getElementById('universalStoreBarcodeSvg');
-  if(svgEl) {
-    try {
-      JsBarcode(svgEl, barcodeKeyword, { format: "CODE128", width: 3, height: 90, displayValue: true, fontSize: 16 });
-    } catch(e) {}
+function renderUniversalQRCode() {
+  const container = document.getElementById('universalQRCodeContainer');
+  const urlTextEl = document.getElementById('universalQRUrlText');
+  const titleEl = document.getElementById('qrCardTitle');
+  if(!container) return;
+
+  container.innerHTML = "";
+  if(titleEl) titleEl.innerText = `QR ${tokoProfile.nama.toUpperCase()} (Keseluruhan Barang)`;
+
+  // Generate target URL langsung ke halaman kasir pembeli dengan parameter toko
+  const targetUrl = window.location.origin + window.location.pathname + `?store=${encodeURIComponent(tokoProfile.nama)}&mode=kasir`;
+  if(urlTextEl) urlTextEl.innerText = targetUrl;
+
+  try {
+    new QRCode(container, {
+      text: targetUrl,
+      width: 180,
+      height: 180,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {
+    console.error("Gagal merender QR Code:", e);
   }
 }
 
-function salinUniversalBarcodeCode() {
-  const code = tokoProfile.nama.replace(/\s+/g, '-').toUpperCase();
-  navigator.clipboard.writeText(code).then(() => alert(`Barcode universal "${code}" berhasil disalin!`));
+function salinUniversalQRUrl() {
+  const targetUrl = window.location.origin + window.location.pathname + `?store=${encodeURIComponent(tokoProfile.nama)}&mode=kasir`;
+  navigator.clipboard.writeText(targetUrl).then(() => alert(`Link QR berhasil disalin: ${targetUrl}`));
 }
 
-function downloadUniversalBarcodePNG() {
-  const svgEl = document.getElementById('universalStoreBarcodeSvg');
-  if(!svgEl) return;
-  const xml = new XMLSerializer().serializeToString(svgEl);
-  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
-  const img = new Image();
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width + 40; canvas.height = img.height + 40;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 20, 20);
-    const a = document.createElement('a');
-    a.download = `Barcode-Universal-${tokoProfile.nama}.png`;
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  };
-  img.src = url;
+function downloadUniversalQRPNG() {
+  const imgEl = document.querySelector('#universalQRCodeContainer img') || document.querySelector('#universalQRCodeContainer canvas');
+  if(!imgEl) { alert("QR belum siap!"); return; }
+  
+  let imageUrl = "";
+  if(imgEl.tagName === 'CANVAS') {
+    imageUrl = imgEl.toDataURL("image/png");
+  } else {
+    imageUrl = imgEl.src;
+  }
+
+  const a = document.createElement('a');
+  a.download = `QR-Keseluruhan-${tokoProfile.nama.replace(/\s+/g, '_')}.png`;
+  a.href = imageUrl;
+  a.click();
 }
 
 function savePengeluaran(e) {
@@ -272,7 +285,7 @@ function saveProfilToko(e) {
   tokoProfile.alamat = document.getElementById('tokoAlamat').value;
   saveDataToStorage();
   loadProfilData();
-  renderUniversalBarcode();
+  renderUniversalQRCode();
   alert("Profil Disimpan!");
 }
 
