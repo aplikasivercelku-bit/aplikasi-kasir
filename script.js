@@ -35,7 +35,7 @@ let currentQrModalKode = "";
 let currentQrModalNama = "";
 
 // ---------------------------------------------------------------------------
-// 1. INISIALISASI & RESTRIKSI MENU KASIR SAJA JIKA DIAKSES DARI QR MASTER
+// 1. INISIALISASI & RESTRIKSI MENU KASIR SAJA JIKA DIAKSES DARI QR MASTER / QR ITEM
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (scanParam || modeParam === 'all') {
     sessionStorage.setItem('sembako_logged_in', 'true');
     if (modeParam === 'all') {
-      sessionStorage.setItem('sembako_kasir_only', 'true'); // HANYA MENU KASIR & TRANSAKSI/KASBON
+      sessionStorage.setItem('sembako_kasir_only', 'true'); // HANYA MENU KASIR
     }
   }
 
@@ -77,13 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNotifications();
     updateKasbonNotifications();
 
-    if (isKasirOnly) {
-      // SET MENU KHUSUS KASIR, SCANNER, DATA TRANSAKSI & KASBON
+    if (isKasirOnly || scanParam) {
       aturMenuKasirSaja();
       showTab('kasirTab');
-    } else if (scanParam) {
+    }
+
+    if (scanParam) {
+      // Langsung Eksekusi Pemanggilan Barang saat QR Item di-scan HP
       bukaLangsungTransaksiDariBarcode(scanParam);
-    } else {
+    } else if (!isKasirOnly) {
       showTab('berandaTab');
     }
   } else {
@@ -115,13 +117,13 @@ function aturMenuKasirSaja() {
 }
 
 function bukaLangsungTransaksiDariBarcode(kodeScan) {
-  const cleanCode = decodeURIComponent(kodeScan).trim();
+  const cleanCode = decodeURIComponent(kodeScan).trim().toLowerCase();
   showTab('kasirTab');
 
   setTimeout(() => {
     const idx = barangList.findIndex(b => 
-      b.kode.toLowerCase() === cleanCode.toLowerCase() || 
-      b.nama.toLowerCase() === cleanCode.toLowerCase()
+      b.kode.toLowerCase() === cleanCode || 
+      b.nama.toLowerCase() === cleanCode
     );
 
     if (idx !== -1) {
@@ -131,12 +133,12 @@ function bukaLangsungTransaksiDariBarcode(kodeScan) {
       document.getElementById('kasirQty').value = 1;
       onKasirBarangChange(idx);
       
-      tambahItemKeranjang();
       speakSuccessMessage(b.nama);
     } else {
       document.getElementById('kasirBarangInput').value = cleanCode;
+      onKetikCariBarang();
     }
-  }, 150);
+  }, 200);
 }
 
 function handleLogin(e) {
@@ -695,7 +697,6 @@ function renderBarangTable() {
   });
 }
 
-// MODAL QR KESELURUHAN DATA BARANG (MASTER) -> HANYA MEMBUKA KASIR SAJA
 function bukaModalQrMasterBarang() {
   const storeId = tokoProfile.storeId || "aplikasi-kasir-utama";
   const baseUrl = window.location.origin + window.location.pathname;
