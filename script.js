@@ -61,6 +61,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Tambahan CSS otomatis untuk merapikan form kasir & barcode di HP agar tidak meluber ke samping
+  if (!document.getElementById('dynamicKasirMobileFixStyle')) {
+    const mobileFixStyle = document.createElement('style');
+    mobileFixStyle.id = 'dynamicKasirMobileFixStyle';
+    mobileFixStyle.innerHTML = `
+      @media (max-width: 768px) {
+        /* Susun elemen jumlah beli dan tombol tambah secara vertikal/rapi di HP */
+        #kasirTab .form-group-inline, 
+        #kasirTab div[style*="display: flex"] {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 10px !important;
+        }
+        #kasirTab input[type="number"], 
+        #kasirTab button {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        /* Kotak preview barcode kasir agar pas di layar HP */
+        #kasirBarcodePreviewArea {
+          width: 100% !important;
+          box-sizing: border-box;
+          overflow-x: auto;
+          padding: 10px !important;
+        }
+        #kasirBarcodeSvg {
+          max-width: 100% !important;
+          height: auto !important;
+        }
+      }
+    `;
+    document.head.appendChild(mobileFixStyle);
+  }
+
   renderBarangTable();
   renderPengeluaranTable();
   renderRiwayatTransaksi();
@@ -176,11 +210,9 @@ function unduhKartuQrMasterPNG() {
     canvas.width = 500;
     canvas.height = 680;
 
-    // Background luar abu-abu lembut
     ctx.fillStyle = "#f1f5f9";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Kartu Putih Utama dengan sudut melengkung
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
     ctx.roundRect(20, 20, canvas.width - 40, canvas.height - 40, 16);
@@ -189,7 +221,6 @@ function unduhKartuQrMasterPNG() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Icon Header Kotak Oranye (CS)
     ctx.fillStyle = "#ea580c";
     ctx.beginPath();
     ctx.roundRect(40, 40, 50, 50, 10);
@@ -200,7 +231,6 @@ function unduhKartuQrMasterPNG() {
     ctx.textBaseline = "middle";
     ctx.fillText("CS", 65, 65);
 
-    // Header Title & Subtitle
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = "#0f172a";
@@ -211,7 +241,6 @@ function unduhKartuQrMasterPNG() {
     ctx.font = "12px 'Segoe UI', Arial, sans-serif";
     ctx.fillText("Pesan Cepat Tanpa Antre", 105, 83);
 
-    // Lencana SCAN ORDER Kanan Atas
     ctx.fillStyle = "#fff1f2";
     ctx.beginPath();
     ctx.roundRect(355, 42, 105, 36, 8);
@@ -225,7 +254,6 @@ function unduhKartuQrMasterPNG() {
     ctx.textBaseline = "middle";
     ctx.fillText("SCAN ORDER", 407, 60);
 
-    // Garis Pemisah Tipis
     ctx.strokeStyle = "#f1f5f9";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -233,18 +261,15 @@ function unduhKartuQrMasterPNG() {
     ctx.lineTo(460, 110);
     ctx.stroke();
 
-    // Nama Toko
     ctx.textAlign = "center";
     ctx.fillStyle = "#0f172a";
     ctx.font = "bold 22px 'Segoe UI', Arial, sans-serif";
     ctx.fillText((tokoProfile.nama || "CAFFE SANTAI HIHIHI").toUpperCase(), canvas.width / 2, 145);
 
-    // Subtitle / Nama Pemilik & Kontak
     ctx.fillStyle = "#64748b";
     ctx.font = "13px 'Segoe UI', Arial, sans-serif";
     ctx.fillText(`OLAN MAULANA • Telp: ${tokoProfile.telp || '087877611218'}`, canvas.width / 2, 168);
 
-    // Kotak Bingkai QR Code Putih di Tengah
     ctx.fillStyle = "#ffffff";
     ctx.strokeStyle = "#e2e8f0";
     ctx.lineWidth = 2;
@@ -253,10 +278,8 @@ function unduhKartuQrMasterPNG() {
     ctx.fill();
     ctx.stroke();
 
-    // Gambar QR Code
     ctx.drawImage(imgSource, 115, 215, 270, 270);
 
-    // Kotak Tagline Bawah QR
     ctx.fillStyle = "#f8fafc";
     ctx.beginPath();
     ctx.roundRect(40, 530, 420, 60, 10);
@@ -275,7 +298,6 @@ function unduhKartuQrMasterPNG() {
     ctx.font = "12px 'Segoe UI', Arial, sans-serif";
     ctx.fillText("Scan menggunakan Kamera HP / Google Lens untuk memesan", canvas.width / 2, 575);
 
-    // Footer Info (ID Toko & WhatsApp Pesanan)
     ctx.fillStyle = "#94a3b8";
     ctx.font = "11px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "left";
