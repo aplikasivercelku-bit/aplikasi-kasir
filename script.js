@@ -40,15 +40,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const modeParam = urlParams.get('mode') || (window.location.search.includes('sto') ? 'kasir' : '');
 
-  if (modeParam === 'kasir') {
-    isBarcodeModeKasirOnly = true;
-    aktifkanTampilanHalamanBarcodeSaja();
-  } else {
-    const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
-    if (isSessionLoggedIn === 'true') {
-      document.getElementById('loginPage').classList.add('hidden');
-      document.getElementById('appContainer').classList.remove('hidden');
+  // Menggunakan localStorage agar status login tetap aktif di browser yang sama saat scan QR di tab baru
+  const isLocalStorageLoggedIn = localStorage.getItem('sembako_logged_in');
+
+  if (isLocalStorageLoggedIn === 'true') {
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    
+    if (modeParam === 'kasir') {
+      showTab('kasirTab');
+    } else {
       showTab('berandaTab');
+    }
+  } else {
+    if (modeParam === 'kasir') {
+      isBarcodeModeKasirOnly = true;
+      aktifkanTampilanHalamanBarcodeSaja();
     } else {
       document.getElementById('loginPage').classList.remove('hidden');
       document.getElementById('appContainer').classList.add('hidden');
@@ -302,7 +309,8 @@ function handleLogin(e) {
   const pInput = document.getElementById('loginPassword').value.trim();
 
   if(uInput === adminCreds.username && pInput === adminCreds.password) {
-    sessionStorage.setItem('sembako_logged_in', 'true');
+    // Menggunakan localStorage agar status login tidak hilang saat scan QR / buka tab baru
+    localStorage.setItem('sembako_logged_in', 'true');
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     showTab('berandaTab');
@@ -313,7 +321,7 @@ function handleLogin(e) {
 
 function logout() {
   if(confirm("Keluar dari sesi ini dan kembali ke halaman login?")) {
-    sessionStorage.removeItem('sembako_logged_in');
+    localStorage.removeItem('sembako_logged_in');
     document.getElementById('appContainer').classList.add('hidden');
     document.getElementById('loginPage').classList.remove('hidden');
     document.getElementById('loginUsername').value = '';
