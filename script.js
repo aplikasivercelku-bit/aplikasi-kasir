@@ -52,7 +52,6 @@ function decodeDataFromUrlParam(base64Str) {
   }
 }
 
-// INISIALISASI & SINKRONISASI MENGGUNAKAN LOCALSTORAGE AGAR REFRESH TIDAK BLANK
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const scanParam = params.get('scan') || params.get('barcode') || params.get('kode');
