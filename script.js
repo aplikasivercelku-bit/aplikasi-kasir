@@ -81,7 +81,6 @@ function aktifkanTampilanHalamanBarcodeSaja() {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('appContainer').classList.remove('hidden');
 
-  // Sembunyikan menu manajemen lain pada sidebar sesuai spesifikasi QR[cite: 6, 7]
   document.querySelectorAll('.sidebar-menu .nav-btn').forEach(btn => {
     const tab = btn.getAttribute('data-tab');
     if (tab !== 'kasirTab' && tab !== 'transaksiTab' && tab !== 'kasbonTab') {
@@ -89,7 +88,6 @@ function aktifkanTampilanHalamanBarcodeSaja() {
     }
   });
 
-  // Sembunyikan tombol Edit di Data Transaksi versi barcode[cite: 5]
   const styleBarcodeOnly = document.createElement('style');
   styleBarcodeOnly.id = 'styleBarcodeModeOnly';
   styleBarcodeOnly.innerHTML = `
@@ -122,35 +120,38 @@ function bukaModalQrMaster() {
   if (qrContainer) {
     qrContainer.innerHTML = "";
     
-    // Mengatur wrapper agar flex dan centerview agar tidak terpotong
+    // Perbaikan tata letak agar rapi di HP dan tidak terpotong menempel garis
     qrContainer.style.display = "flex";
     qrContainer.style.justifyContent = "center";
     qrContainer.style.alignItems = "center";
     qrContainer.style.width = "100%";
+    qrContainer.style.padding = "20px";
+    qrContainer.style.boxSizing = "border-box";
     qrContainer.style.overflow = "hidden";
 
     new QRCode(qrContainer, {
       text: targetUrl,
-      width: 180,  // Dikecilkan sedikit agar pas dan tidak mentok / terpotong
-      height: 180,
+      width: 170,
+      height: 170,
       colorDark: "#000000",
       colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.H
     });
 
-    // Memastikan elemen img/canvas hasil generate otomatis responsif di dalam kontainer
     setTimeout(() => {
       const generatedEl = qrContainer.querySelector('img, canvas');
       if (generatedEl) {
         generatedEl.style.maxWidth = "100%";
         generatedEl.style.height = "auto";
         generatedEl.style.display = "block";
+        generatedEl.style.margin = "0 auto";
       }
     }, 50);
   }
 
   overlay.classList.remove('hidden');
 }
+
 function tutupModalQrMaster(e) {
   if (e && e.target.id !== 'qrMasterModalOverlay') return;
   const overlay = document.getElementById('qrMasterModalOverlay');
@@ -170,30 +171,24 @@ function unduhKartuQrMasterPNG() {
     canvas.width = 420;
     canvas.height = 500;
 
-    // Background putih kartu
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Border kartu halus
     ctx.strokeStyle = "#e2e8f0";
     ctx.lineWidth = 4;
     ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-    // Nama Toko di bagian atas
     ctx.fillStyle = "#0f172a";
     ctx.font = "bold 24px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText((tokoProfile.nama || "APLIKASI KASIR").toUpperCase(), canvas.width / 2, 62);
 
-    // Kotak Bingkai QR Code
     ctx.strokeStyle = "#cbd5e1";
     ctx.lineWidth = 2;
     ctx.strokeRect(75, 90, 270, 270);
 
-    // Gambar QR Code
     ctx.drawImage(imgSource, 95, 110, 230, 230);
 
-    // Kotak Keterangan Bawah
     ctx.fillStyle = "#ecfdf5";
     ctx.fillRect(40, 385, 340, 75);
     ctx.fillStyle = "#16a34a";
@@ -1614,7 +1609,8 @@ function initScannerCamera() {
     config, 
     (decodedText) => {
       const currentTime = Date.now();
-      if (decodedText === lastScannedCode && (currentTime - lastScannedTime < 2500)) return;
+      // Jeda pembatasan scan duplikat dalam 2 detik agar tidak spam
+      if (decodedText === lastScannedCode && (currentTime - lastScannedTime < 2000)) return;
       lastScannedCode = decodedText;
       lastScannedTime = currentTime;
 
@@ -1628,7 +1624,7 @@ function initScannerCamera() {
           statusEl.style.color = '#64748b';
           statusEl.style.fontWeight = 'normal';
           statusEl.innerText = 'Mengarahkan kamera ke barcode...';
-        }, 3000);
+        }, 2500);
       }
       
       cariProdukByBarcodeScanner(decodedText);
@@ -1670,7 +1666,20 @@ function scanImageFromFile(e) {
 }
 
 function cariProdukByBarcodeScanner(code) {
-  const cleanCode = code.trim().toLowerCase();
+  const cleanRaw = code.trim();
+  
+  // Jika kode berupa URL Kasir atau QR Master Toko, biarkan discan tanpa memicu reload paksa berulang
+  if (cleanRaw.includes('mode=kasir') || cleanRaw.includes('?sto') || cleanRaw === "APP-KASIR-MASTER-BARANG") {
+    const statusEl = document.getElementById('scannerStatus');
+    if(statusEl) {
+      statusEl.style.color = '#16a34a';
+      statusEl.style.fontWeight = 'bold';
+      statusEl.innerText = `✅ QR Code Toko Terdeteksi!`;
+    }
+    return;
+  }
+
+  const cleanCode = cleanRaw.toLowerCase();
   const infoCard = document.getElementById('productDetailInfo');
   const notFoundText = document.getElementById('productNotFound');
 
