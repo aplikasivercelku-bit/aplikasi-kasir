@@ -877,6 +877,22 @@ textarea.form-control {
   }
 }
 
+#qrMasterContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+#qrMasterContainer img, 
+#qrMasterContainer canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
 /* LIGHTBOX BARCODE MODAL */
 .lightbox-overlay {
   position: fixed;
