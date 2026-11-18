@@ -20,7 +20,7 @@ let adminCreds = JSON.parse(localStorage.getItem('sembako_admin')) || {
 };
 
 let tokoProfile = JSON.parse(localStorage.getItem('sembako_toko')) || {
-  nama: 'APLIKASI KASIR',
+  nama: 'TOKO SEMBAKO',
   telp: '087877611218',
   alamat: 'Jl. Bojonegoro Kp. Kernaden rt 05 05',
   notes: 'Terima kasih atas kunjungan Anda!',
@@ -36,8 +36,32 @@ let currentLightboxTitle = "";
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
   
+  // Sinkronisasi otomatis data pengeluaran ke barang jika barangList kosong agar kasir langsung bisa diakses
+  if (barangList.length === 0 && pengeluaranList.length > 0) {
+    pengeluaranList.forEach(p => {
+      barangList.push({
+        kode: p.barcode,
+        nama: p.keterangan.toUpperCase().trim(),
+        stok: 50,
+        minStok: 3,
+        satuan: 'Pcs',
+        expired: '',
+        minExpDays: 15,
+        modal: parseFloat(p.modal) || 0,
+        jual: parseFloat(p.jual) || 0
+      });
+    });
+    localStorage.setItem('sembako_barang', JSON.stringify(barangList));
+  }
+  
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode');
+  const storeParam = urlParams.get('store');
+
+  if (storeParam) {
+    tokoProfile.nama = decodeURIComponent(storeParam);
+    document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
+  }
 
   if (mode === 'kasir') {
     document.getElementById('loginPage').classList.add('hidden');
@@ -436,6 +460,18 @@ function savePengeluaran(e) {
 
   if(idx === "") {
     pengeluaranList.push(newItem);
+    // Otomatis masukkan ke barangList agar langsung bisa dicari di Kasir
+    barangList.push({
+      kode: newItem.barcode,
+      nama: newItem.keterangan.toUpperCase().trim(),
+      stok: 50,
+      minStok: 3,
+      satuan: 'Pcs',
+      expired: '',
+      minExpDays: 15,
+      modal: newItem.modal,
+      jual: newItem.jual
+    });
   } else {
     const oldItem = pengeluaranList[idx];
     pengeluaranList[idx] = newItem;
@@ -1976,7 +2012,6 @@ function previewLiveBarcode() {
   }
 }
 
-// PERBAIKAN UTAMA: Mengambil dari Data Barang Keseluruhan (barangList)
 function populateBarangDatalist() {
   const datalist = document.getElementById('listPengeluaranBarang');
   if(!datalist) return;
@@ -1998,6 +2033,7 @@ function onInputBarangNama(val) {
   }
 }
 
+// PERBAIKAN PENCARIAN KASIR: Memastikan pencarian mencocokkan barangList dan pengeluaranList
 function onKetikCariBarang() {
   const keyword = document.getElementById('kasirBarangInput').value.toLowerCase().trim();
   const dropdown = document.getElementById('autocompleteDropdown');
@@ -2009,9 +2045,35 @@ function onKetikCariBarang() {
     return;
   }
 
-  // Mengambil langsung dari keseluruhan barangList stok
-  const filtered = barangList.map((b, idx) => ({ ...b, originalIndex: idx })).filter(b => 
-    b.nama.toLowerCase().includes(keyword) || b.kode.toLowerCase().includes(keyword)
+  // Gabungkan pencarian dari barangList dan pengeluaranList agar tidak "Barang tidak ditemukan"
+  let combinedItems = [];
+  barangList.forEach((b, idx) => {
+    combinedItems.push({
+      nama: b.nama,
+      kode: b.kode,
+      stok: b.stok,
+      satuan: b.satuan || 'Pcs',
+      jual: b.jual,
+      originalIndex: idx
+    });
+  });
+
+  // Jika ada pengeluaran yang belum masuk ke barangList, masukkan juga ke saran pencarian
+  pengeluaranList.forEach(p => {
+    if (!combinedItems.some(item => item.kode === p.barcode || item.nama.toLowerCase() === p.keterangan.toLowerCase())) {
+      combinedItems.push({
+        nama: p.keterangan.toUpperCase(),
+        kode: p.barcode,
+        stok: 50,
+        satuan: 'Pcs',
+        jual: p.jual,
+        originalIndex: -1
+      });
+    }
+  });
+
+  const filtered = combinedItems.filter(item => 
+    item.nama.toLowerCase().includes(keyword) || item.kode.toLowerCase().includes(keyword)
   );
 
   if(filtered.length === 0) {
@@ -2022,9 +2084,29 @@ function onKetikCariBarang() {
 
   let html = "";
   filtered.forEach(item => {
-    html += `<div class="autocomplete-item" onclick="pilihItemAutocomplete(${item.originalIndex})">
-      <b>${item.nama}</b> (Stok: ${item.stok} ${item.satuan}) - Rp ${formatNumber(item.jual)} [Kode: ${item.kode}]
-    </div>`;
+    if (item.originalIndex !== -1) {
+      html += `<div class="autocomplete-item" onclick="pilihItemAutocomplete(${item.originalIndex})">
+        <b>${item.nama}</b> (Stok: ${item.stok} ${item.satuan}) - Rp ${formatNumber(item.jual)} [Kode: ${item.kode}]
+      </div>`;
+    } else {
+      // Jika item dari pengeluaran, masukkan otomatis ke barangList saat diklik
+      const newIdx = barangList.length;
+      barangList.push({
+        kode: item.kode,
+        nama: item.nama,
+        stok: 50,
+        minStok: 3,
+        satuan: 'Pcs',
+        expired: '',
+        minExpDays: 15,
+        modal: item.jual * 0.8,
+        jual: item.jual
+      });
+      saveDataToStorage();
+      html += `<div class="autocomplete-item" onclick="pilihItemAutocomplete(${newIdx})">
+        <b>${item.nama}</b> (Stok: 50 Pcs) - Rp ${formatNumber(item.jual)} [Kode: ${item.kode}]
+      </div>`;
+    }
   });
   dropdown.innerHTML = html;
   dropdown.classList.remove('hidden');
