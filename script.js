@@ -34,8 +34,15 @@ let currentLightboxBarcode = "";
 let currentLightboxTitle = "";
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Ambil ulang data dari localStorage untuk memastikan data tidak hilang
+  barangList = JSON.parse(localStorage.getItem('sembako_barang')) || [];
+  pengeluaranList = JSON.parse(localStorage.getItem('sembako_pengeluaran')) || [];
+  transaksiList = JSON.parse(localStorage.getItem('sembako_transaksi')) || [];
+  kasbonList = JSON.parse(localStorage.getItem('sembako_kasbon')) || [];
+
   loadProfilData();
   
+  // Sinkronisasi otomatis data pengeluaran ke barang jika barangList kosong namun pengeluaran ada
   if (barangList.length === 0 && pengeluaranList.length > 0) {
     pengeluaranList.forEach(p => {
       barangList.push({
@@ -59,24 +66,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (storeParam) {
     tokoProfile.nama = decodeURIComponent(storeParam);
-    document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
+    if(document.getElementById('browserPageTitle')) {
+      document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
+    }
   }
 
   if (mode === 'kasir') {
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('appContainer').classList.remove('hidden');
-    
+    document.getElementById('loginPage')?.classList.add('hidden');
+    document.getElementById('appContainer')?.classList.remove('hidden');
     setupBarcodeModeNavigation();
     showTab('kasirTab');
   } else {
     const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
     if (isSessionLoggedIn === 'true') {
-      document.getElementById('loginPage').classList.add('hidden');
-      document.getElementById('appContainer').classList.remove('hidden');
+      document.getElementById('loginPage')?.classList.add('hidden');
+      document.getElementById('appContainer')?.classList.remove('hidden');
       showTab('berandaTab');
     } else {
-      document.getElementById('loginPage').classList.remove('hidden');
-      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('loginPage')?.classList.remove('hidden');
+      document.getElementById('appContainer')?.classList.add('hidden');
     }
   }
 
@@ -177,6 +185,11 @@ function showTab(tabId) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #777;">Silakan pilih tanggal atau klik 'Cetak Keseluruhan Transaksi'.</td></tr>`;
     }
   }
+
+  const sidebar = document.getElementById('appSidebar');
+  if(sidebar && window.innerWidth <= 768) {
+    sidebar.classList.remove('mobile-open');
+  }
 }
 
 function toggleMobileSidebar() {
@@ -203,6 +216,8 @@ function saveDataToStorage() {
   localStorage.setItem('sembako_kasbon', JSON.stringify(kasbonList));
   localStorage.setItem('sembako_admin', JSON.stringify(adminCreds));
   localStorage.setItem('sembako_toko', JSON.stringify(tokoProfile));
+  updateNotifications();
+  updateKasbonNotifications();
 }
 
 function updateDashboardStats() {
@@ -292,7 +307,266 @@ function toggleNotifDropdown() {
   document.getElementById('notifDropdown')?.classList.toggle('hidden');
 }
 
-// --- FUNGSI PENCARIAN KASIR & KOTAK HIJAU ---
+// --- PENGELUARAN & BARCODE ---
+function savePengeluaran(e) {
+  e.preventDefault();
+  const idx = document.getElementById('pengeluaranEditIndex').value;
+  const newItem = {
+    tanggal: document.getElementById('pengTgl').value,
+    keterangan: document.getElementById('pengKeterangan').value.trim(),
+    modal: parseFloat(document.getElementById('pengHargaModal').value) || 0,
+    jual: parseFloat(document.getElementById('pengHargaJual').value) || 0,
+    barcode: document.getElementById('pengBarcodeCode').value.trim()
+  };
+
+  if(idx === "") {
+    pengeluaranList.push(newItem);
+    barangList.push({
+      kode: newItem.barcode,
+      nama: newItem.keterangan.toUpperCase().trim(),
+      stok: 50,
+      minStok: 3,
+      satuan: 'Pcs',
+      expired: '',
+      minExpDays: 15,
+      modal: newItem.modal,
+      jual: newItem.jual
+    });
+  } else {
+    const oldItem = pengeluaranList[idx];
+    pengeluaranList[idx] = newItem;
+    barangList.forEach(b => {
+      if(b.kode === oldItem.barcode || b.nama.toUpperCase() === oldItem.keterangan.toUpperCase()) {
+        b.nama = newItem.keterangan.toUpperCase();
+        b.kode = newItem.barcode;
+        b.modal = newItem.modal;
+        b.jual = newItem.jual;
+      }
+    });
+  }
+
+  saveDataToStorage();
+  renderPengeluaranTable();
+  renderBarangTable();
+  populateBarangDatalist();
+  updateFinancialSummary();
+  resetPengeluaranForm();
+}
+
+function renderPengeluaranTable() {
+  const tbody = document.getElementById('pengeluaranTbody');
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  
+  const keyword = (document.getElementById('searchPengeluaranInput')?.value || '').toLowerCase();
+  const filtered = pengeluaranList.filter(p => p.keterangan.toLowerCase().includes(keyword) || p.barcode.toLowerCase().includes(keyword));
+
+  if(filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #777;">Belum ada data pengeluaran.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach((p, idx) => {
+    const origIdx = pengeluaranList.indexOf(p);
+    const svgId = `tableBarcode_peng_${origIdx}`;
+    const safeName = p.keterangan.replace(/'/g, "\\'");
+    const safeCode = p.barcode.replace(/'/g, "\\'");
+
+    tbody.innerHTML += `
+      <tr>
+        <td style="text-align: center;"><input type="checkbox" class="pengeluaran-checkbox" value="${origIdx}" style="width: 16px; height: 16px; cursor: pointer;"></td>
+        <td>${idx + 1}</td>
+        <td>${formatDateID(p.tanggal)}</td>
+        <td><b>${p.keterangan}</b></td>
+        <td>Rp ${formatNumber(p.modal)}</td>
+        <td>Rp ${formatNumber(p.jual)}</td>
+        <td style="text-align: center;">
+          <div class="barcode-clickable" onclick="bukaLightboxBarcode('${safeCode}', '${safeName}')" title="Klik untuk memperbesar barcode">
+            <svg id="${svgId}" class="table-barcode-svg"></svg>
+          </div>
+        </td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="editPengeluaran(${origIdx})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePengeluaran(${origIdx})">Hapus</button>
+        </td>
+      </tr>
+    `;
+    setTimeout(() => {
+      try { JsBarcode(`#${svgId}`, p.barcode, { format: "CODE128", width: 2, height: 50, displayValue: true, fontSize: 14 }); } catch(err){}
+    }, 50);
+  });
+}
+
+function resetPengeluaranForm() {
+  document.getElementById('pengeluaranForm').reset();
+  document.getElementById('pengeluaranEditIndex').value = "";
+  document.getElementById('liveBarcodeSvg').innerHTML = "";
+  toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
+}
+
+function editPengeluaran(idx) {
+  toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
+  const p = pengeluaranList[idx];
+  document.getElementById('pengeluaranEditIndex').value = idx;
+  document.getElementById('pengTgl').value = p.tanggal;
+  document.getElementById('pengKeterangan').value = p.keterangan;
+  document.getElementById('pengHargaModal').value = p.modal;
+  document.getElementById('pengHargaJual').value = p.jual;
+  document.getElementById('pengBarcodeCode').value = p.barcode;
+  previewLiveBarcode();
+}
+
+function deletePengeluaran(idx) {
+  if(confirm("Hapus data pengeluaran ini?")) {
+    pengeluaranList.splice(idx, 1);
+    saveDataToStorage();
+    renderPengeluaranTable();
+    populateBarangDatalist();
+    updateFinancialSummary();
+  }
+}
+
+function previewLiveBarcode() {
+  const code = document.getElementById('pengBarcodeCode').value.trim();
+  if(code) {
+    try { JsBarcode("#liveBarcodeSvg", code, { format: "CODE128", width: 2.5, height: 75, displayValue: true, fontSize: 16 }); } catch(e){}
+  } else {
+    document.getElementById('liveBarcodeSvg').innerHTML = "";
+  }
+}
+
+// --- DATA BARANG STOK ---
+function saveBarang(e) {
+  e.preventDefault();
+  const idx = document.getElementById('barangEditIndex').value;
+  const barcodeVal = document.getElementById('barKode').value.trim();
+  
+  if(!barcodeVal) {
+    alert("Barcode wajib terisi otomatis dari data pengeluaran.");
+    return;
+  }
+
+  const barang = {
+    kode: barcodeVal,
+    nama: document.getElementById('barNama').value.toUpperCase().trim(),
+    stok: parseInt(document.getElementById('barStok').value) || 0,
+    minStok: parseInt(document.getElementById('barMinStok').value) || 3,
+    satuan: document.getElementById('barSatuan').value,
+    expired: document.getElementById('barExpired').value,
+    minExpDays: parseInt(document.getElementById('barMinExpDays').value) || 15,
+    modal: parseFloat(document.getElementById('barHargaModal').value) || 0,
+    jual: parseFloat(document.getElementById('barHargaJual').value) || 0
+  };
+
+  if(idx === "") barangList.push(barang);
+  else barangList[idx] = barang;
+
+  saveDataToStorage();
+  renderBarangTable();
+  populateLaporanBarangSelect();
+  updateDashboardStats();
+  updateFinancialSummary();
+  resetBarangForm();
+  alert("Data stok barang berhasil disimpan!");
+}
+
+function renderBarangTable() {
+  const tbody = document.getElementById('barangTbody');
+  if(!tbody) return;
+  tbody.innerHTML = "";
+
+  const keyword = (document.getElementById('searchBarangInput')?.value || '').toLowerCase();
+  const filtered = barangList.filter(b => b.nama.toLowerCase().includes(keyword) || b.kode.toLowerCase().includes(keyword));
+
+  if(filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #777;">Belum ada data barang. Silakan input dari Data Pengeluaran terlebih dahulu.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach((b, idx) => {
+    const origIdx = barangList.indexOf(b);
+    const svgIdBarang = `tableBarcode_bar_${origIdx}`;
+    const safeName = b.nama.replace(/'/g, "\\'");
+    const safeCode = b.kode.replace(/'/g, "\\'");
+
+    tbody.innerHTML += `
+      <tr id="barangRow_${origIdx}">
+        <td style="text-align: center;"><input type="checkbox" class="barang-checkbox" value="${origIdx}" style="width: 16px; height: 16px; cursor: pointer;"></td>
+        <td>${idx + 1}</td>
+        <td style="text-align: center;">
+          <div class="barcode-clickable" onclick="bukaLightboxBarcode('${safeCode}', '${safeName}')" title="Klik untuk memperbesar barcode">
+            <svg id="${svgIdBarang}" class="table-barcode-svg"></svg>
+          </div>
+        </td>
+        <td><b>${b.nama}</b></td>
+        <td><b>${b.stok}</b> ${b.satuan}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="editBarang(${origIdx})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBarang(${origIdx})">Hapus</button>
+        </td>
+      </tr>
+    `;
+    setTimeout(() => {
+      try { JsBarcode(`#${svgIdBarang}`, b.kode, { format: "CODE128", width: 2, height: 50, displayValue: true, fontSize: 14 }); } catch(err){}
+    }, 50);
+  });
+}
+
+function resetBarangForm() {
+  document.getElementById('barangForm').reset();
+  document.getElementById('barangEditIndex').value = "";
+  toggleForm('barangFormCard', 'barangToggleIcon');
+}
+
+function editBarang(idx) {
+  toggleForm('barangFormCard', 'barangToggleIcon');
+  const b = barangList[idx];
+  document.getElementById('barangEditIndex').value = idx;
+  document.getElementById('barNama').value = b.nama;
+  document.getElementById('barKode').value = b.kode;
+  document.getElementById('barStok').value = b.stok;
+  document.getElementById('barMinStok').value = b.minStok || 3;
+  document.getElementById('barSatuan').value = b.satuan;
+  document.getElementById('barExpired').value = b.expired || '';
+  document.getElementById('barMinExpDays').value = b.minExpDays || 15;
+  document.getElementById('barHargaModal').value = b.modal;
+  document.getElementById('barHargaJual').value = b.jual;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteBarang(idx) {
+  if(confirm("Hapus barang ini?")) {
+    barangList.splice(idx, 1);
+    saveDataToStorage();
+    renderBarangTable();
+    populateLaporanBarangSelect();
+    updateDashboardStats();
+    updateFinancialSummary();
+  }
+}
+
+function populateBarangDatalist() {
+  const datalist = document.getElementById('listPengeluaranBarang');
+  if(!datalist) return;
+  datalist.innerHTML = '';
+  barangList.forEach(b => { datalist.innerHTML += `<option value="${b.nama}">`; });
+}
+
+function onInputBarangNama(val) {
+  const cleanVal = val.trim().toLowerCase();
+  const matched = barangList.find(b => b.nama.toLowerCase() === cleanVal);
+  if(matched) {
+    document.getElementById('barKode').value = matched.kode;
+    document.getElementById('barHargaModal').value = matched.modal;
+    document.getElementById('barHargaJual').value = matched.jual;
+  } else {
+    document.getElementById('barKode').value = '';
+    document.getElementById('barHargaModal').value = '';
+    document.getElementById('barHargaJual').value = '';
+  }
+}
+
+// --- PENCARIAN KASIR & KOTAK HIJAU ---
 function onKetikCariBarang() {
   const keyword = document.getElementById('kasirBarangInput').value.toLowerCase().trim();
   const dropdown = document.getElementById('autocompleteDropdown');
@@ -321,7 +595,7 @@ function onKetikCariBarang() {
   if(filtered.length === 0) {
     dropdown.innerHTML = `<div class="autocomplete-item" style="color: #94a3b8; cursor: default; padding: 8px 12px;">Barang tidak ditemukan</div>`;
     dropdown.classList.remove('hidden');
-    document.getElementById('kasirInfoBarangDitemukan').classList.add('hidden');
+    document.getElementById('kasirInfoBarangDitemukan')?.classList.add('hidden');
     return;
   }
 
@@ -353,7 +627,6 @@ function pilihItemAutocomplete(idx) {
   onKasirBarangChange(idx);
 }
 
-// Menampilkan Kotak Hijau & Barcode Batang persis seperti Gambar Referensi
 function onKasirBarangChange(idx) {
   const previewArea = document.getElementById('kasirBarcodePreviewArea');
   const placeholder = document.getElementById('kasirBarcodePlaceholder');
@@ -363,12 +636,14 @@ function onKasirBarangChange(idx) {
     const barang = barangList[idx];
     currentSelectedKasirBarcode = barang.kode;
 
-    infoBox.classList.remove('hidden');
-    document.getElementById('infoNamaDitemukan').innerText = barang.nama;
-    document.getElementById('infoDetailDitemukan').innerText = `Harga: Rp ${formatNumber(barang.jual)} | Sisa Stok: ${barang.stok} ${barang.satuan}`;
+    if(infoBox) {
+      infoBox.classList.remove('hidden');
+      document.getElementById('infoNamaDitemukan').innerText = barang.nama;
+      document.getElementById('infoDetailDitemukan').innerText = `Harga: Rp ${formatNumber(barang.jual)} | Sisa Stok: ${barang.stok} ${barang.satuan}`;
+    }
 
-    previewArea.classList.remove('hidden');
-    placeholder.classList.add('hidden');
+    if(previewArea) previewArea.classList.remove('hidden');
+    if(placeholder) placeholder.classList.add('hidden');
     
     try { 
       JsBarcode("#kasirBarcodeSvg", barang.kode, { 
@@ -383,9 +658,9 @@ function onKasirBarangChange(idx) {
     }
   } else {
     currentSelectedKasirBarcode = "";
-    infoBox.classList.add('hidden');
-    previewArea.classList.add('hidden');
-    placeholder.classList.remove('hidden');
+    if(infoBox) infoBox.classList.add('hidden');
+    if(previewArea) previewArea.classList.add('hidden');
+    if(placeholder) placeholder.classList.remove('hidden');
   }
 }
 
@@ -440,9 +715,9 @@ function tambahItemKeranjang() {
   document.getElementById('kasirBarangInput').value = "";
   document.getElementById('selectedKasirBarangIndex').value = "";
   document.getElementById('kasirQty').value = 1;
-  document.getElementById('kasirInfoBarangDitemukan').classList.add('hidden');
-  document.getElementById('kasirBarcodePreviewArea').classList.add('hidden');
-  document.getElementById('kasirBarcodePlaceholder').classList.remove('hidden');
+  document.getElementById('kasirInfoBarangDitemukan')?.classList.add('hidden');
+  document.getElementById('kasirBarcodePreviewArea')?.classList.add('hidden');
+  document.getElementById('kasirBarcodePlaceholder')?.classList.remove('hidden');
   currentSelectedKasirBarcode = "";
 }
 
@@ -454,7 +729,7 @@ function renderKeranjang() {
 
   if(keranjangList.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #777;">Keranjang kosong.</td></tr>`;
-    document.getElementById('kasirTotalDisplay').innerText = `Rp 0`;
+    if(document.getElementById('kasirTotalDisplay')) document.getElementById('kasirTotalDisplay').innerText = `Rp 0`;
     return;
   }
 
@@ -477,7 +752,7 @@ function renderKeranjang() {
     }, 50);
   });
 
-  document.getElementById('kasirTotalDisplay').innerText = `Rp ${formatNumber(total)}`;
+  if(document.getElementById('kasirTotalDisplay')) document.getElementById('kasirTotalDisplay').innerText = `Rp ${formatNumber(total)}`;
   hitungKembalian();
 }
 
@@ -485,7 +760,9 @@ function hitungKembalian() {
   let total = keranjangList.reduce((sum, item) => sum + item.subtotal, 0);
   let bayar = parseFloat(document.getElementById('kasirBayar').value) || 0;
   let kembalian = bayar - total;
-  document.getElementById('kasirKembalianDisplay').innerText = kembalian >= 0 ? `Rp ${formatNumber(kembalian)}` : `Rp 0`;
+  if(document.getElementById('kasirKembalianDisplay')) {
+    document.getElementById('kasirKembalianDisplay').innerText = kembalian >= 0 ? `Rp ${formatNumber(kembalian)}` : `Rp 0`;
+  }
 }
 
 function prosesPembayaran() {
@@ -542,21 +819,138 @@ function resetKasirForm() {
   document.getElementById('selectedKasirBarangIndex').value = "";
   document.getElementById('kasirNamaKasbon').value = "";
   document.getElementById('kasirBayar').value = "";
-  document.getElementById('kasirInfoBarangDitemukan').classList.add('hidden');
-  document.getElementById('kasirBarcodePreviewArea').classList.add('hidden');
-  document.getElementById('kasirBarcodePlaceholder').classList.remove('hidden');
+  document.getElementById('kasirInfoBarangDitemukan')?.classList.add('hidden');
+  document.getElementById('kasirBarcodePreviewArea')?.classList.add('hidden');
+  document.getElementById('kasirBarcodePlaceholder')?.classList.remove('hidden');
   currentSelectedKasirBarcode = "";
   renderKeranjang();
 }
 
+// --- TRANSAKSI & KASBON ---
+function renderRiwayatTransaksi() {
+  currentFilteredTransaksi = [...transaksiList];
+  renderRiwayatTransaksiFiltered();
+}
+
+function renderRiwayatTransaksiFiltered() {
+  const tbody = document.getElementById('riwayatTransaksiTbody');
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  if(currentFilteredTransaksi.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #777;">Tidak ada data transaksi.</td></tr>`;
+    return;
+  }
+  currentFilteredTransaksi.forEach((t, idx) => {
+    const originalIndex = transaksiList.indexOf(t);
+    const namaBarangUtama = t.items.map((i, iIdx) => `${iIdx + 1}. ${i.nama} (${i.qty}x)`).join('<br>');
+    tbody.innerHTML += `
+      <tr>
+        <td>${idx + 1}</td>
+        <td><b>${namaBarangUtama}</b></td>
+        <td>${t.namaKasbon || '-'}</td>
+        <td>${t.tanggal}</td>
+        <td>${t.items.length} item</td>
+        <td>Rp ${formatNumber(t.total)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteTransaksi(${originalIndex})">Hapus</button></td>
+      </tr>
+    `;
+  });
+}
+
+function deleteTransaksi(idx) {
+  if(confirm("Hapus transaksi ini?")) {
+    transaksiList.splice(idx, 1);
+    saveDataToStorage();
+    renderRiwayatTransaksi();
+    updateDashboardStats();
+    updateFinancialSummary();
+  }
+}
+
+function renderKasbonTable() {
+  const tbody = document.getElementById('kasbonTbody');
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  if(kasbonList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #777;">Belum ada data kasbon.</td></tr>`;
+    return;
+  }
+  kasbonList.forEach((k, idx) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${formatDateID(k.tanggal)}</td>
+        <td><b>${k.nama}</b></td>
+        <td>${k.status}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteKasbon(${idx})">Hapus</button></td>
+      </tr>
+    `;
+  });
+}
+
+function deleteKasbon(idx) {
+  if(confirm("Hapus kasbon ini?")) {
+    kasbonList.splice(idx, 1);
+    saveDataToStorage();
+    renderKasbonTable();
+    updateKasbonNotifications();
+  }
+}
+
+function populateKasbonDatalist() {
+  const datalist = document.getElementById('listKasbonNama');
+  if(!datalist) return;
+  datalist.innerHTML = '';
+  kasbonList.forEach(k => { datalist.innerHTML += `<option value="${k.nama}">`; });
+}
+
+function populateLaporanBarangSelect() {
+  const select = document.getElementById('laporanBarangSelect');
+  if(!select) return;
+  select.innerHTML = '<option value="">-- Semua Barang --</option>';
+  barangList.forEach(b => { select.innerHTML += `<option value="${b.nama}">${b.nama}</option>`; });
+}
+
+// --- LIGHTBOX BARCODE ---
+function bukaLightboxBarcode(code, title = "Barcode Barang") {
+  if (!code) return;
+  currentLightboxBarcode = code;
+  currentLightboxTitle = title;
+  
+  let modal = document.getElementById('barcodeLightboxModal');
+  if(!modal) {
+    modal = document.createElement('div');
+    modal.id = 'barcodeLightboxModal';
+    modal.className = 'lightbox-overlay';
+    modal.innerHTML = `
+      <div class="lightbox-container" style="background:#fff; padding:20px; border-radius:8px; text-align:center;">
+        <h3 id="lightboxItemTitle">${title}</h3>
+        <svg id="lightboxBarcodeSvg"></svg>
+        <div style="margin-top:10px;"><button class="btn btn-secondary btn-sm" onclick="tutupLightboxBarcode()">Tutup</button></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('lightboxItemTitle').innerText = title;
+  modal.classList.remove('hidden');
+  try {
+    JsBarcode("#lightboxBarcodeSvg", code, { format: "CODE128", width: 3, height: 100, displayValue: true, fontSize: 16 });
+  } catch(e){}
+}
+
+function tutupLightboxBarcode() {
+  document.getElementById('barcodeLightboxModal')?.classList.add('hidden');
+}
+
+// --- UTILITIES ---
 function formatNumber(num) {
   return new Intl.NumberFormat('id-ID').format(num);
 }
 
 function loadProfilData() {
-  document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
-  document.getElementById('bannerStoreName').innerText = tokoProfile.nama;
-  document.getElementById('bannerAlamat').innerText = tokoProfile.alamat;
-  document.getElementById('bannerTelp').innerText = tokoProfile.telp;
-  document.getElementById('navBrandText').innerText = tokoProfile.nama;
+  if(document.getElementById('browserPageTitle')) document.getElementById('browserPageTitle').innerText = tokoProfile.nama;
+  if(document.getElementById('bannerStoreName')) document.getElementById('bannerStoreName').innerText = tokoProfile.nama;
+  if(document.getElementById('bannerAlamat')) document.getElementById('bannerAlamat').innerText = tokoProfile.alamat;
+  if(document.getElementById('bannerTelp')) document.getElementById('bannerTelp').innerText = tokoProfile.telp;
+  if(document.getElementById('navBrandText')) document.getElementById('navBrandText').innerText = tokoProfile.nama;
 }
