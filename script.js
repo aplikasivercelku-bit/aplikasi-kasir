@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileFixStyle.id = 'dynamicKasirMobileFixStyle';
     mobileFixStyle.innerHTML = `
       @media (max-width: 768px) {
-        /* Susun elemen jumlah beli dan tombol tambah secara vertikal/rapi di HP */
         #kasirTab .form-group-inline, 
         #kasirTab div[style*="display: flex"] {
           flex-direction: column !important;
@@ -79,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
           width: 100% !important;
           max-width: 100% !important;
         }
-        /* Kotak preview barcode kasir agar pas di layar HP */
         #kasirBarcodePreviewArea {
           width: 100% !important;
           box-sizing: border-box;
@@ -121,6 +119,7 @@ function aktifkanTampilanHalamanBarcodeSaja() {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('appContainer').classList.remove('hidden');
 
+  // Hanya menampilkan Transaksi Kasir, Data Transaksi, dan Kasbon / Piutang
   document.querySelectorAll('.sidebar-menu .nav-btn').forEach(btn => {
     const tab = btn.getAttribute('data-tab');
     if (tab !== 'kasirTab' && tab !== 'transaksiTab' && tab !== 'kasbonTab') {
@@ -131,6 +130,9 @@ function aktifkanTampilanHalamanBarcodeSaja() {
   const styleBarcodeOnly = document.createElement('style');
   styleBarcodeOnly.id = 'styleBarcodeModeOnly';
   styleBarcodeOnly.innerHTML = `
+    .sidebar-menu .nav-btn.hidden {
+      display: none !important;
+    }
     #riwayatTransaksiTbody .btn-edit-trx-admin {
       display: none !important;
     }
@@ -159,7 +161,6 @@ function bukaModalQrMaster() {
 
   if (qrContainer) {
     qrContainer.innerHTML = "";
-    
     qrContainer.style.display = "flex";
     qrContainer.style.justifyContent = "center";
     qrContainer.style.alignItems = "center";
@@ -426,9 +427,9 @@ function saveDataToStorage() {
 }
 
 function updateDashboardStats() {
-  document.getElementById('statTotalBarang').innerText = barangList.length;
-  document.getElementById('statTotalTransaksi').innerText = transaksiList.length;
-  document.getElementById('statTotalPengeluaran').innerText = pengeluaranList.length;
+  if(document.getElementById('statTotalBarang')) document.getElementById('statTotalBarang').innerText = barangList.length;
+  if(document.getElementById('statTotalTransaksi')) document.getElementById('statTotalTransaksi').innerText = transaksiList.length;
+  if(document.getElementById('statTotalPengeluaran')) document.getElementById('statTotalPengeluaran').innerText = pengeluaranList.length;
 }
 
 function updateFinancialSummary() {
@@ -484,7 +485,6 @@ function updateKasbonNotifications() {
   let html = '';
   belumLunasList.forEach((k) => {
     const origIdx = kasbonList.indexOf(k);
-    
     const trx = transaksiList.filter(t => t.namaKasbon && t.namaKasbon.toLowerCase() === k.nama.toLowerCase());
     const totalBelanja = trx.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
     const sudahDibayar = trx.reduce((sum, t) => {
@@ -498,7 +498,6 @@ function updateKasbonNotifications() {
       return sum + subSudah;
     }, 0);
     const sisa = totalBelanja - sudahDibayar;
-
     let keteranganSisa = sisa > 0 ? ` (sisa: Rp ${formatNumber(sisa)})` : ` (Belum Lunas)`;
 
     html += `<div class="notif-item stok-warning" onclick="navigateToKasbon(${origIdx})">
@@ -1184,10 +1183,8 @@ function renderKasbonTable() {
 
   filtered.forEach((k, idx) => {
     const origIdx = kasbonList.indexOf(k);
-    
     const transaksiKasbon = transaksiList.filter(t => t.namaKasbon && t.namaKasbon.toLowerCase() === k.nama.toLowerCase());
     const jumlahTrx = transaksiKasbon.length;
-    
     let totalBelanjaKasbon = transaksiKasbon.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
     
     let sisaKurang = 0;
@@ -1231,7 +1228,6 @@ function renderKasbonTable() {
     if(jumlahTrx > 0) {
       transaksiKasbon.forEach(t => {
         const globalTrxIdx = transaksiList.indexOf(t);
-        
         if (t.items && Array.isArray(t.items)) {
           t.items.forEach((item, itemIdx) => {
             const isChecked = item.isLunasItem ? 'checked' : '';
@@ -1309,7 +1305,6 @@ function hapusKasbonTerpilih() {
       const k = kasbonList[idx];
       if (k) {
         const namaKasbonTarget = k.nama.toLowerCase();
-        
         const transaksiKasbon = transaksiList.filter(t => t.namaKasbon && t.namaKasbon.toLowerCase() === namaKasbonTarget);
         let sisaKurang = 0;
         transaksiKasbon.forEach(t => {
@@ -1323,7 +1318,6 @@ function hapusKasbonTerpilih() {
         });
 
         const isBelumLunas = sisaKurang > 0;
-
         transaksiList.forEach(t => {
           if (t.namaKasbon && t.namaKasbon.toLowerCase() === namaKasbonTarget) {
             if (isBelumLunas) {
@@ -1599,7 +1593,6 @@ function renderRiwayatTransaksiFiltered() {
   }
 
   summaryBox.style.cssText = "margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;";
-  
   summaryBox.innerHTML = `
     <div>
       <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 2px;">Terbilang:</div>
@@ -1950,7 +1943,6 @@ function arahkanSetelahTransaksi(namaKasbon) {
   const cleanKasbon = namaKasbon ? namaKasbon.trim() : "";
   if (cleanKasbon !== "") {
     let kasbonIdx = kasbonList.findIndex(k => k.nama.toLowerCase() === cleanKasbon.toLowerCase());
-    
     showTab('kasbonTab');
 
     setTimeout(() => {
@@ -2249,7 +2241,6 @@ function tambahItemKeranjang() {
   }
 
   const barang = barangList[idx];
-  
   const editIdx = document.getElementById('transaksiEditIndex').value;
   let stokAsli = barang.stok;
   if (editIdx !== "") {
@@ -2471,7 +2462,6 @@ function prosesPembayaran() {
   updateKasbonNotifications();
 
   alert("Transaksi berhasil disimpan dan diperbarui!");
-
   arahkanSetelahTransaksi(namaKasbonInput);
 }
 
