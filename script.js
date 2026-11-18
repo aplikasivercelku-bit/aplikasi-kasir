@@ -35,7 +35,7 @@ let currentQrModalKode = "";
 let currentQrModalNama = "";
 
 // ---------------------------------------------------------------------------
-// 1. INISIALISASI & BYPASS LOGIN OTOMATIS JIKA DIAKSES VIA SCAN BARCODE / QR
+// 1. INISIALISASI & RESTRIKSI MENU KASIR SAJA JIKA DIAKSES DARI QR MASTER
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
@@ -50,12 +50,17 @@ document.addEventListener('DOMContentLoaded', () => {
     saveDataToStorage();
   }
 
-  // JIKA DIAKSES MELALUI SCAN BARCODE ATAU QR MASTER, OTOMATIS MASUK (BYPASS LOGIN)
+  // JIKA DIAKSES MELALUI SCAN BARCODE ATAU QR MASTER KESELURUHAN
   if (scanParam || modeParam === 'all') {
     sessionStorage.setItem('sembako_logged_in', 'true');
+    if (modeParam === 'all') {
+      sessionStorage.setItem('sembako_kasir_only', 'true'); // HANYA MENU KASIR & TRANSAKSI/KASBON
+    }
   }
 
   const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
+  const isKasirOnly = sessionStorage.getItem('sembako_kasir_only') === 'true';
+
   if (isSessionLoggedIn === 'true') {
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
@@ -72,13 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNotifications();
     updateKasbonNotifications();
 
-    if (scanParam) {
+    if (isKasirOnly) {
+      // SET MENU KHUSUS KASIR, SCANNER, DATA TRANSAKSI & KASBON
+      aturMenuKasirSaja();
+      showTab('kasirTab');
+    } else if (scanParam) {
       bukaLangsungTransaksiDariBarcode(scanParam);
     } else {
       showTab('berandaTab');
     }
   } else {
-    // HANYA MUNCUL LOGIN JIKA DIBUKA DARI LINK UTAMA TANPA PARAMETER SCAN/BARCODE
     document.getElementById('loginPage').classList.remove('hidden');
     document.getElementById('appContainer').classList.add('hidden');
   }
@@ -88,6 +96,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('barExpired')) document.getElementById('barExpired').value = today;
   if(document.getElementById('kasbonTgl')) document.getElementById('kasbonTgl').value = today;
 });
+
+function aturMenuKasirSaja() {
+  const sidebarMenu = document.getElementById('sidebarMenuContainer');
+  if (sidebarMenu) {
+    sidebarMenu.innerHTML = `
+      <button class="nav-btn active" data-tab="kasirTab" onclick="showTab('kasirTab')">🛒 Transaksi Kasir</button>
+      <button class="nav-btn" data-tab="scannerTab" onclick="showTab('scannerTab')">📷 Scanner Barcode</button>
+      <button class="nav-btn" data-tab="transaksiTab" onclick="showTab('transaksiTab')">📜 Data Transaksi</button>
+      <button class="nav-btn" data-tab="kasbonTab" onclick="showTab('kasbonTab')">📑 Kasbon / Piutang</button>
+      <div class="sidebar-user-section" style="margin-top: 20px;">
+        <div class="user-info">
+          <span>🛒 Mode Kasir Utama</span>
+        </div>
+      </div>
+    `;
+  }
+}
 
 function bukaLangsungTransaksiDariBarcode(kodeScan) {
   const cleanCode = decodeURIComponent(kodeScan).trim();
@@ -109,17 +134,7 @@ function bukaLangsungTransaksiDariBarcode(kodeScan) {
       tambahItemKeranjang();
       speakSuccessMessage(b.nama);
     } else {
-      const pengMatched = pengeluaranList.find(p => 
-        p.barcode.toLowerCase() === cleanCode.toLowerCase() || 
-        p.keterangan.toLowerCase() === cleanCode.toLowerCase()
-      );
-      if (pengMatched) {
-        alert(`Barang "${pengMatched.keterangan}" (Kode: ${pengMatched.barcode}) ditemukan di Data Pengeluaran, namun stoknya belum ditambahkan di Data Barang. Silakan input stoknya dulu.`);
-        showTab('barangTab');
-      } else {
-        document.getElementById('kasirBarangInput').value = cleanCode;
-        alert(`Kode Barcode "${cleanCode}" tidak ditemukan di Data Barang.`);
-      }
+      document.getElementById('kasirBarangInput').value = cleanCode;
     }
   }, 150);
 }
@@ -131,6 +146,7 @@ function handleLogin(e) {
 
   if(uInput === adminCreds.username && pInput === adminCreds.password) {
     sessionStorage.setItem('sembako_logged_in', 'true');
+    sessionStorage.removeItem('sembako_kasir_only');
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     
@@ -161,11 +177,17 @@ function handleLogin(e) {
 function logout() {
   if(confirm("Keluar dari sesi ini dan kembali ke halaman login?")) {
     sessionStorage.removeItem('sembako_logged_in');
-    window.location.href = window.location.pathname; // Kembali ke link bersih tanpa parameter scan
+    sessionStorage.removeItem('sembako_kasir_only');
+    window.location.href = window.location.pathname;
   }
 }
 
 function showTab(tabId) {
+  const isKasirOnly = sessionStorage.getItem('sembako_kasir_only') === 'true';
+  if (isKasirOnly && ['berandaTab', 'pengeluaranTab', 'barangTab', 'laporanTab', 'panduanTab', 'profilTab'].includes(tabId)) {
+    tabId = 'kasirTab';
+  }
+
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -237,9 +259,9 @@ function saveDataToStorage() {
 }
 
 function updateDashboardStats() {
-  document.getElementById('statTotalBarang').innerText = barangList.length;
-  document.getElementById('statTotalTransaksi').innerText = transaksiList.length;
-  document.getElementById('statTotalPengeluaran').innerText = pengeluaranList.length;
+  if(document.getElementById('statTotalBarang')) document.getElementById('statTotalBarang').innerText = barangList.length;
+  if(document.getElementById('statTotalTransaksi')) document.getElementById('statTotalTransaksi').innerText = transaksiList.length;
+  if(document.getElementById('statTotalPengeluaran')) document.getElementById('statTotalPengeluaran').innerText = pengeluaranList.length;
 }
 
 function updateFinancialSummary() {
@@ -542,7 +564,7 @@ function resetPengeluaranForm() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. DATA BARANG, QR MASTER (KESELURUHAN DATA BARANG) & BARCODE PERMANEN
+// 3. DATA BARANG, QR MASTER & BARCODE PERMANEN
 // ---------------------------------------------------------------------------
 function toggleSelectAllBarang(source) {
   document.querySelectorAll('.barang-checkbox').forEach(cb => { cb.checked = source.checked; });
@@ -673,7 +695,7 @@ function renderBarangTable() {
   });
 }
 
-// MODAL QR KESELURUHAN DATA BARANG (MASTER)
+// MODAL QR KESELURUHAN DATA BARANG (MASTER) -> HANYA MEMBUKA KASIR SAJA
 function bukaModalQrMasterBarang() {
   const storeId = tokoProfile.storeId || "aplikasi-kasir-utama";
   const baseUrl = window.location.origin + window.location.pathname;
@@ -733,13 +755,13 @@ function downloadQrMasterPng() {
 
   ctx.fillStyle = '#16a34a';
   ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('QR Keseluruhan Data Barang', 150, 292);
+  ctx.fillText('QR Kasir & Transaksi Saja', 150, 292);
   ctx.fillStyle = '#64748b';
   ctx.font = '10px sans-serif';
-  ctx.fillText('Scan untuk Membuka Aplikasi & Stok', 150, 312);
+  ctx.fillText('Scan untuk Langsung Menu Kasir', 150, 312);
 
   const link = document.createElement('a');
-  link.download = `QR_Master_DataBarang_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
+  link.download = `QR_Kasir_Saja_${(tokoProfile.nama || 'Toko').replace(/\s+/g, '_')}.png`;
   link.href = exportCanvas.toDataURL('image/png');
   link.click();
 }
@@ -1012,7 +1034,7 @@ function onKetikCariBarang() {
   }
 
   const exactIdx = barangList.findIndex(b => b.kode.toLowerCase() === extractedCode);
-  if (exactIdx !== -1 && rawInput.length >= 3) {
+  if (exactIdx !== -1 && rawInput.length >= 2) {
     pilihItemAutocomplete(exactIdx);
     return;
   }
@@ -1346,11 +1368,12 @@ function prosesPembayaran() {
     window.history.replaceState({}, document.title, cleanUrl);
   }
 
+  // ALUR OTOMATIS: JIKA KASBON ARAHKAN KE HALAMAN KASBON, JIKA TIDAK ARAHKAN KE DATA TRANSAKSI
   if (isKasbon) {
     alert(`Transaksi Kasbon atas nama "${namaKasbonInput}" tercatat! Mengarahkan ke halaman Kasbon / Piutang untuk cek status...`);
     arahkanSetelahTransaksi(namaKasbonInput);
   } else {
-    alert("Transaksi Tunai berhasil! Menampilkan di halaman Data Transaksi...");
+    alert("Transaksi Tunai berhasil! Menampilkan Data Transaksi...");
     showTab('transaksiTab');
   }
 }
@@ -1393,18 +1416,12 @@ function resetKasirForm() {
   document.getElementById('kasirBayar').value = "";
   document.getElementById('kasirFormTitle').innerText = "🛒 Kasir Penjualan";
   document.getElementById('btnSimpanTransaksi').innerText = "✅ Selesaikan Transaksi";
-  document.getElementById('btnBatalEditTransaksi').classList.add('hidden');
   document.getElementById('kasirBarcodePreviewArea').classList.add('hidden');
   document.getElementById('kasirBarcodePlaceholder').classList.remove('hidden');
   const detectedBox = document.getElementById('kasirDetectedItemBox');
   if (detectedBox) detectedBox.classList.add('hidden');
   currentSelectedKasirBarcode = "";
   renderKeranjang();
-}
-
-function batalEditTransaksi() {
-  resetKasirForm();
-  showTab('transaksiTab');
 }
 
 // ---------------------------------------------------------------------------
@@ -1565,7 +1582,7 @@ function kirimHasilScanKeKasir() {
 }
 
 // ---------------------------------------------------------------------------
-// 6. KASBON / PIUTANG, RIWAYAT TRANSAKSI, LAPORAN & PROFIL TOKO
+// 6. KASBON, TRANSAKSI, LAPORAN & PROFIL
 // ---------------------------------------------------------------------------
 function toggleSelectAllKasbon(source) {
   document.querySelectorAll('.kasbon-checkbox').forEach(cb => { cb.checked = source.checked; });
@@ -1927,7 +1944,6 @@ function editTransaksi(idx) {
   document.getElementById('kasirNamaKasbon').value = t.namaKasbon || '';
   document.getElementById('kasirFormTitle').innerText = `✏️ Edit Transaksi Penjualan`;
   document.getElementById('btnSimpanTransaksi').innerText = "🔄 Perbarui Transaksi";
-  document.getElementById('btnBatalEditTransaksi').classList.remove('hidden');
   renderKeranjang();
 }
 
