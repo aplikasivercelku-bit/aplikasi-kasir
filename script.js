@@ -20,7 +20,7 @@ let adminCreds = JSON.parse(localStorage.getItem('sembako_admin')) || {
 };
 
 let tokoProfile = JSON.parse(localStorage.getItem('sembako_toko')) || {
-  nama: 'CAFFE SANTAI HIHIHI',
+  nama: 'MADURA TANGGUL',
   telp: '087877611218',
   alamat: 'Jl. Bojonegoro Kp. Kernaden rt 05 05',
   notes: 'Terima kasih atas kunjungan Anda!',
@@ -119,7 +119,7 @@ function aktifkanTampilanHalamanBarcodeSaja() {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('appContainer').classList.remove('hidden');
 
-  // Hanya menampilkan Transaksi Kasir, Data Transaksi, dan Kasbon / Piutang
+  // HANYA menampilkan: Transaksi Kasir (kasirTab), Data Transaksi (transaksiTab), dan Kasbon / Piutang (kasbonTab)
   document.querySelectorAll('.sidebar-menu .nav-btn').forEach(btn => {
     const tab = btn.getAttribute('data-tab');
     if (tab !== 'kasirTab' && tab !== 'transaksiTab' && tab !== 'kasbonTab') {
@@ -156,7 +156,7 @@ function bukaModalQrMaster() {
   const qrContainer = document.getElementById('qrMasterContainer');
 
   const targetUrl = getKasirBarcodeUrl();
-  if (storeTitleEl) storeTitleEl.innerText = tokoProfile.nama || 'CAFFE SANTAI HIHIHI';
+  if (storeTitleEl) storeTitleEl.innerText = tokoProfile.nama || 'MADURA TANGGUL';
   if (urlInputEl) urlInputEl.value = targetUrl;
 
   if (qrContainer) {
@@ -265,7 +265,7 @@ function unduhKartuQrMasterPNG() {
     ctx.textAlign = "center";
     ctx.fillStyle = "#0f172a";
     ctx.font = "bold 22px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText((tokoProfile.nama || "CAFFE SANTAI HIHIHI").toUpperCase(), canvas.width / 2, 145);
+    ctx.fillText((tokoProfile.nama || "MADURA TANGGUL").toUpperCase(), canvas.width / 2, 145);
 
     ctx.fillStyle = "#64748b";
     ctx.font = "13px 'Segoe UI', Arial, sans-serif";
@@ -302,7 +302,7 @@ function unduhKartuQrMasterPNG() {
     ctx.fillStyle = "#94a3b8";
     ctx.font = "11px 'Segoe UI', Arial, sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(`ID Toko: ${tokoProfile.nama ? tokoProfile.nama.toLowerCase().replace(/\s+/g, '-') : 'caffe-santai-hihihi'}`, 45, 625);
+    ctx.fillText(`ID Toko: ${tokoProfile.nama ? tokoProfile.nama.toLowerCase().replace(/\s+/g, '-') : 'madura-tanggul'}`, 45, 625);
 
     ctx.textAlign = "right";
     ctx.fillText(`WhatsApp Pesanan: +${tokoProfile.telp || '6287877611218'}`, 455, 625);
