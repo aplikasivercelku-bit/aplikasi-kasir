@@ -35,13 +35,14 @@ let currentQrModalKode = "";
 let currentQrModalNama = "";
 
 // ---------------------------------------------------------------------------
-// 1. INISIALISASI & TANGKAP PARAMETER SCAN BARCODE DARI HP / GOOGLE LENS
+// 1. INISIALISASI & BYPASS LOGIN OTOMATIS JIKA DIAKSES VIA SCAN BARCODE / QR
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
   
   const params = new URLSearchParams(window.location.search);
   const scanParam = params.get('scan') || params.get('barcode') || params.get('kode');
+  const modeParam = params.get('mode');
   const storeParam = params.get('store');
 
   if (storeParam && !tokoProfile.storeId) {
@@ -49,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     saveDataToStorage();
   }
 
-  if (scanParam) {
+  // JIKA DIAKSES MELALUI SCAN BARCODE ATAU QR MASTER, OTOMATIS MASUK (BYPASS LOGIN)
+  if (scanParam || modeParam === 'all') {
     sessionStorage.setItem('sembako_logged_in', 'true');
   }
 
@@ -76,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showTab('berandaTab');
     }
   } else {
+    // HANYA MUNCUL LOGIN JIKA DIBUKA DARI LINK UTAMA TANPA PARAMETER SCAN/BARCODE
     document.getElementById('loginPage').classList.remove('hidden');
     document.getElementById('appContainer').classList.add('hidden');
   }
@@ -158,10 +161,7 @@ function handleLogin(e) {
 function logout() {
   if(confirm("Keluar dari sesi ini dan kembali ke halaman login?")) {
     sessionStorage.removeItem('sembako_logged_in');
-    document.getElementById('appContainer').classList.add('hidden');
-    document.getElementById('loginPage').classList.remove('hidden');
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
+    window.location.href = window.location.pathname; // Kembali ke link bersih tanpa parameter scan
   }
 }
 
