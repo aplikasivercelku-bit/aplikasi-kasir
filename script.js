@@ -52,7 +52,7 @@ function decodeDataFromUrlParam(base64Str) {
   }
 }
 
-// INISIALISASI & SINKRONISASI OTOMATIS DATA BARANG DARI QR KE HP
+// INISIALISASI & SINKRONISASI OTOMATIS DATA BARANG, TRANSAKSI & KASBON DARI QR KE HP
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const scanParam = params.get('scan') || params.get('barcode') || params.get('kode');
@@ -60,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const storeParam = params.get('store');
   const syncItemsParam = params.get('items');
   const syncSingleItemParam = params.get('item');
+  const syncTransactionsParam = params.get('transactions');
+  const syncKasbonParam = params.get('kasbon');
   const tokoNameParam = params.get('toko');
 
   if (syncItemsParam) {
@@ -85,6 +87,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       localStorage.setItem('sembako_barang', JSON.stringify(barangList));
+    }
+  }
+
+  if (syncTransactionsParam) {
+    const importedTrx = decodeDataFromUrlParam(syncTransactionsParam);
+    if (Array.isArray(importedTrx) && importedTrx.length > 0) {
+      transaksiList = importedTrx;
+      localStorage.setItem('sembako_transaksi', JSON.stringify(transaksiList));
+    }
+  }
+
+  if (syncKasbonParam) {
+    const importedKasbon = decodeDataFromUrlParam(syncKasbonParam);
+    if (Array.isArray(importedKasbon) && importedKasbon.length > 0) {
+      kasbonList = importedKasbon;
+      localStorage.setItem('sembako_kasbon', JSON.stringify(kasbonList));
     }
   }
 
@@ -654,7 +672,7 @@ function resetPengeluaranForm() {
   toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
 }
 
-// DATA BARANG & QR
+// DATA BARANG & QR (SINKRONISASI BARANG, TRANSAKSI, & KASBON)
 function toggleSelectAllBarang(source) {
   document.querySelectorAll('.barang-checkbox').forEach(cb => { cb.checked = source.checked; });
 }
@@ -797,11 +815,12 @@ function bukaModalQrMasterBarang() {
     j: b.jual
   }));
   const encodedItems = encodeDataToUrlParam(compactItems);
+  const encodedTrx = encodeDataToUrlParam(transaksiList);
+  const encodedKasbon = encodeDataToUrlParam(kasbonList);
 
-  const masterUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&mode=all&toko=${encodeURIComponent(tokoProfile.nama || 'TOKO SEMBAKO')}&items=${encodeURIComponent(encodedItems)}`;
+  const masterUrl = `${baseUrl}?store=${encodeURIComponent(storeId)}&mode=all&toko=${encodeURIComponent(tokoProfile.nama || 'TOKO SEMBAKO')}&items=${encodeURIComponent(encodedItems)}&transactions=${encodeURIComponent(encodedTrx)}&kasbon=${encodeURIComponent(encodedKasbon)}`;
 
   document.getElementById('qrMasterModalTitle').innerText = tokoProfile.nama || "Aplikasi Kasir";
-  // Teks jumlah item dihapus sesuai permintaan
   document.getElementById('qrMasterItemCount').innerText = ""; 
   document.getElementById('qrMasterUrlInput').value = masterUrl;
 
@@ -2290,7 +2309,7 @@ function importDataApp() {
   reader.onload = function(e) {
     const data = JSON.parse(e.target.result);
     if(data.barangList) barangList = data.barangList;
-    if(data.pengeluaranList) pengeluaranList = data.pengeluaranList;
+    if(data.pengeluaranList) pengeluaranList = data.pengeluuranList;
     if(data.transaksiList) transaksiList = data.transaksiList;
     if(data.kasbonList) kasbonList = data.kasbonList;
     if(data.adminCreds) adminCreds = data.adminCreds;
