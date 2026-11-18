@@ -1412,6 +1412,7 @@ function prosesPembayaran() {
     }
   }
 
+  // PENGURANGAN STOK BARANG & SINKRONISASI PERMANEN
   keranjangList.forEach(item => {
     const b = barangList.find(x => x.kode === item.kode);
     if(b) {
@@ -1495,10 +1496,10 @@ function prosesPembayaran() {
   }
 
   if (isKasbon) {
-    alert(`Transaksi Kasbon atas nama "${namaKasbonInput}" tercatat! Mengarahkan ke halaman Kasbon / Piutang untuk cek status...`);
+    alert(`Transaksi Kasbon atas nama "${namaKasbonInput}" tercatat! Stok barang otomatis dikurangi & tersinkron.`);
     arahkanSetelahTransaksi(namaKasbonInput);
   } else {
-    alert("Transaksi Tunai berhasil! Menampilkan Data Transaksi...");
+    alert("Transaksi Tunai berhasil! Stok barang otomatis dikurangi & tersinkron.");
     showTab('transaksiTab');
   }
 }
