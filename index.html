@@ -119,19 +119,6 @@
           </div>
         </div>
 
-        <!-- BARCODE UNIVERSAL SELAMANYA DI HALAMAN DATA BARANG / BERANDA -->
-        <div class="card" style="margin-top: 20px; text-align: center; background: #ffffff;">
-          <h2 style="font-size: 1.1rem; margin-bottom: 10px; color: #0f172a;">barcode universal toko (untuk scan pembeli)</h2>
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Barcode ini bersifat tetap (selamanya) dan otomatis menyinkronkan seluruh perubahan data barang, stok, dan harga secara real-time.</p>
-          <div style="display: inline-block; padding: 15px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;">
-            <svg id="universalStoreBarcodeSvg"></svg>
-          </div>
-          <div style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button type="button" class="btn btn-primary btn-sm" onclick="salinUniversalBarcodeCode()">📋 Salin Teks Barcode</button>
-            <button type="button" class="btn btn-success btn-sm" onclick="downloadUniversalBarcodePNG()">📥 Unduh Barcode PNG</button>
-          </div>
-        </div>
-
         <div class="stats-grid" style="margin-top: 20px;">
           <div class="stat-card">
             <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;">📦</div>
@@ -200,8 +187,21 @@
         </div>
       </section>
 
-      <!-- TAB 3: DATA BARANG -->
+      <!-- TAB 3: DATA BARANG (DENGAN BARCODE KESELURUHAN DI SINI) -->
       <section id="barangTab" class="tab-content">
+        <!-- BARCODE UNIVERSAL / KESELURUHAN DIPINDAHKAN KE HALAMAN DATA BARANG -->
+        <div class="card" style="text-align: center; background: #ffffff; margin-bottom: 20px;">
+          <h2 style="font-size: 1.1rem; margin-bottom: 10px; color: #0f172a;">barcode universal toko (untuk scan pembeli)</h2>
+          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Barcode ini bersifat tetap dan otomatis menyinkronkan seluruh data barang secara keseluruhan untuk discan di kasir pembeli.</p>
+          <div style="display: inline-block; padding: 15px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;">
+            <svg id="universalStoreBarcodeSvg"></svg>
+          </div>
+          <div style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="salinUniversalBarcodeCode()">📋 Salin Teks Barcode</button>
+            <button type="button" class="btn btn-success btn-sm" onclick="downloadUniversalBarcodePNG()">📥 Unduh Barcode PNG</button>
+          </div>
+        </div>
+
         <div class="card collapsible-card collapsed" id="barangFormCard">
           <div class="card-header" onclick="toggleForm('barangFormCard', 'barangToggleIcon')">
             <h2>➕ Tambah Data Barang Stok</h2>
@@ -238,7 +238,7 @@
 
         <div class="card" style="margin-top: 20px;">
           <div class="table-header-tools">
-            <h2>Tampilan Data Barang & Barcode Universal / Per Produk</h2>
+            <h2>Tampilan Data Barang & Barcode Per Produk</h2>
             <input type="text" id="searchBarangInput" class="form-control" placeholder="Cari barang..." oninput="renderBarangTable()" style="max-width: 250px;">
           </div>
           <div class="table-responsive">
@@ -310,15 +310,6 @@
             <div class="scanner-status" id="scannerStatus">Mengarahkan kamera ke barcode...</div>
             <input type="text" id="scanResultCode" class="form-control" placeholder="Atau ketik barcode..." oninput="cariProdukByBarcodeScanner(this.value)" style="margin-top: 15px; text-align: center;">
           </div>
-          <div class="card hidden" id="productDetailInfo" style="margin-top: 20px;">
-            <h3 id="infoNama">-</h3>
-            <div>Stok: <span id="infoStok">-</span></div>
-            <div>Harga: <b id="infoHarga">-</b></div>
-            <div style="margin-top: 10px; display: flex; gap: 10px;">
-              <input type="number" id="scanQty" class="form-control" value="1" min="1" style="width: 100px;">
-              <button type="button" class="btn btn-success" onclick="tambahKeKeranjangScanner()">🛒 Tambah ke Keranjang</button>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -362,7 +353,7 @@
           </form>
         </div>
         <div class="card" style="margin-top: 20px;">
-          <h2>Daftar Kasbon / Piutang (Status / Detail Tanpa Edit)</h2>
+          <h2>Daftar Kasbon / Piutang</h2>
           <div class="table-responsive">
             <table class="data-table">
               <thead>
@@ -386,7 +377,7 @@
       <section id="panduanTab" class="tab-content">
         <div class="card">
           <h2>📖 Panduan APLIKASI KASIR</h2>
-          <p>Seluruh sinkronisasi data barang, kasir, dan kasbon terhubung secara otomatis menggunakan 1 Barcode Universal toko.</p>
+          <p>Sinkronisasi data barang, kasir, dan kasbon terhubung secara otomatis menggunakan Barcode Universal toko di menu Data Barang.</p>
         </div>
       </section>
 
@@ -403,13 +394,6 @@
         </div>
       </section>
     </main>
-  </div>
-
-  <div id="printModalOverlay" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div id="printReceiptContent" class="receipt-box"></div>
-      <button class="btn btn-secondary" onclick="closePrintModal()" style="margin-top: 10px; width: 100%;">Tutup</button>
-    </div>
   </div>
 
   <script src="script.js"></script>
