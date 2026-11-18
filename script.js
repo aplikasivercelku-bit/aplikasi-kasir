@@ -35,6 +35,7 @@ let currentLightboxTitle = "";
 
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
+  renderMasterBarangBarcode();
   
   const isSessionLoggedIn = sessionStorage.getItem('sembako_logged_in');
   if (isSessionLoggedIn === 'true') {
@@ -67,6 +68,50 @@ document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('trxTglDari')) document.getElementById('trxTglDari').value = '';
   if(document.getElementById('trxTglSampai')) document.getElementById('trxTglSampai').value = '';
 });
+
+function renderMasterBarangBarcode() {
+  const svgEl = document.getElementById('masterBarangBarcodeSvg');
+  if(svgEl) {
+    try {
+      JsBarcode("#masterBarangBarcodeSvg", "APP-KASIR-MASTER-BARANG", {
+        format: "CODE128",
+        lineColor: "#000000",
+        width: 2.5,
+        height: 70,
+        displayValue: true,
+        fontSize: 16,
+        margin: 10
+      });
+    } catch(e) {}
+  }
+}
+
+function downloadMasterBarangBarcodePNG() {
+  const svgEl = document.getElementById('masterBarangBarcodeSvg');
+  if(!svgEl) return;
+  const xml = new XMLSerializer().serializeToString(svgEl);
+  const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width || 350;
+    canvas.height = img.height || 120;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    
+    const a = document.createElement('a');
+    a.download = `Barcode_Master_Data_Barang.png`;
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  img.src = url;
+}
 
 function handleLogin(e) {
   e.preventDefault();
@@ -107,7 +152,10 @@ function showTab(tabId) {
     updateDashboardStats();
     updateFinancialSummary();
   }
-  if(tabId === 'barangTab') populateBarangDatalist();
+  if(tabId === 'barangTab') {
+    populateBarangDatalist();
+    renderMasterBarangBarcode();
+  }
   if(tabId === 'kasirTab') {
     populateKasbonDatalist();
     if(!document.getElementById('transaksiEditIndex').value) {
@@ -1412,7 +1460,6 @@ function hapusTransaksiTerpilih() {
   }
 }
 
-// Fungsi Text-to-Speech yang mengikuti volume media perangkat (HP / Laptop) dan mengucapkan nama barang saat masuk keranjang
 function speakSuccessMessage(namaBarang) {
   try {
     if ('speechSynthesis' in window) {
@@ -1519,53 +1566,36 @@ function scanImageFromFile(e) {
     });
 }
 
-function previewScanLabelManual(val) {
-  const cleanVal = val.trim();
-  const svgEl = document.getElementById('svgScanLabelPreview');
-  const placeholder = document.getElementById('svgScanLabelPlaceholder');
+function cariProdukByBarcodeScanner(code) {
+  const cleanRaw = code.trim();
+  if (cleanRaw === "APP-KASIR-MASTER-BARANG") {
+    sessionStorage.setItem('sembako_logged_in', 'true');
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    
+    const belumLunas = kasbonList.find(k => {
+      const trx = transaksiList.filter(t => t.namaKasbon && t.namaKasbon.toLowerCase() === k.nama.toLowerCase());
+      const totalBelanja = trx.reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
+      const sudahDibayar = trx.reduce((sum, t) => {
+        let subSudah = 0;
+        if (t.isLunasKasbon === true) subSudah += (parseFloat(t.total) || 0);
+        if (t.items && Array.isArray(t.items)) {
+          t.items.forEach(i => { if (i.isLunasItem === true) subSudah += (parseFloat(i.subtotal) || 0); });
+        }
+        return sum + subSudah;
+      }, 0);
+      return (totalBelanja - sudahDibayar) > 0;
+    });
 
-  if (cleanVal.length > 0) {
-    placeholder.classList.add('hidden');
-    try {
-      JsBarcode("#svgScanLabelPreview", cleanVal, { format: "CODE128", width: 2.5, height: 75, displayValue: true, fontSize: 16 });
-    } catch(e) {}
-
-    const found = barangList.find(b => b.kode.toLowerCase() === cleanVal.toLowerCase() || b.nama.toLowerCase().includes(cleanVal.toLowerCase()));
-    if (found) {
-      document.getElementById('labelInfoNama').innerText = found.nama;
-      document.getElementById('labelInfoStok').innerText = `${found.stok} ${found.satuan}`;
-      document.getElementById('labelInfoHarga').innerText = `Rp ${formatNumber(found.jual)}`;
-      document.getElementById('labelInfoKode').innerText = found.kode;
+    if (belumLunas) {
+      showTab('kasbonTab');
     } else {
-      document.getElementById('labelInfoNama').innerText = "Barang tidak ditemukan di database stok";
-      document.getElementById('labelInfoStok').innerText = "-";
-      document.getElementById('labelInfoHarga').innerText = "-";
-      document.getElementById('labelInfoKode').innerText = cleanVal;
+      showTab('kasirTab');
     }
-  } else {
-    svgEl.innerHTML = "";
-    placeholder.classList.remove('hidden');
-    document.getElementById('labelInfoNama').innerText = "-";
-    document.getElementById('labelInfoStok').innerText = "-";
-    document.getElementById('labelInfoHarga').innerText = "-";
-    document.getElementById('labelInfoKode').innerText = "-";
-  }
-}
-
-function salinTeksBarcodeManual() {
-  const inputEl = document.getElementById('inputScanLabelManual');
-  const val = inputEl.value.trim();
-  if (!val) {
-    alert("Masukkan kode atau nama barcode terlebih dahulu!");
     return;
   }
-  navigator.clipboard.writeText(val).then(() => {
-    alert(`Kode barcode "${val}" berhasil disalin ke clipboard!`);
-  });
-}
 
-function cariProdukByBarcodeScanner(code) {
-  const cleanCode = code.trim().toLowerCase();
+  const cleanCode = cleanRaw.toLowerCase();
   const infoCard = document.getElementById('productDetailInfo');
   const notFoundText = document.getElementById('productNotFound');
 
@@ -1651,7 +1681,6 @@ function tambahKeKeranjangScanner() {
     });
   }
 
-  // Panggil suara dengan menyebutkan nama barang saat berhasil masuk keranjang
   speakSuccessMessage(selectedProdukAktif.nama);
 
   renderKeranjangScanner();
