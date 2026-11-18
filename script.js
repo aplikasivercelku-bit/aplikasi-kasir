@@ -36,7 +36,6 @@ let currentLightboxTitle = "";
 document.addEventListener('DOMContentLoaded', () => {
   loadProfilData();
   
-  // Cek apakah diakses via scan barcode (mode kasir langsung tanpa login)
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode');
 
@@ -44,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     
-    // Terapkan pembatasan menu khusus kasir sesuai instruksi
     setupBarcodeModeNavigation();
     showTab('kasirTab');
   } else {
@@ -81,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('trxTglSampai')) document.getElementById('trxTglSampai').value = '';
 });
 
-// Mode navigasi khusus barcode (Tanpa menghilangkan menu utama secara permanen di local, hanya memfilter tampilan saat diakses via barcode)
 function setupBarcodeModeNavigation() {
   const menuContainer = document.getElementById('sidebarMenuContainer');
   if(menuContainer) {
@@ -578,7 +575,6 @@ function generateQrKeseluruhan() {
   if(!container) return;
   container.innerHTML = '';
 
-  // URL permanen untuk scan langsung ke mode kasir
   const baseUrl = window.location.href.split('?')[0];
   const permanentUrl = `${baseUrl}?store=${encodeURIComponent(tokoProfile.nama)}&mode=kasir`;
 
@@ -1017,7 +1013,6 @@ function renderKasbonTable() {
     return;
   }
 
-  // Cek apakah diakses dari mode barcode (hilangkan tombol edit jika mode kasir)
   const isBarcodeMode = new URLSearchParams(window.location.search).get('mode') === 'kasir';
 
   filtered.forEach((k, idx) => {
@@ -1098,7 +1093,6 @@ function renderKasbonTable() {
       </div>`;
     }
 
-    // Tombol aksi pada tabel kasbon (tanpa tombol edit jika diakses via barcode)
     let actionButtonsHtml = `
       <button class="btn btn-primary btn-sm" onclick="toggleDetailKasbon(${origIdx})" id="btnDetailKasbon_${origIdx}">🔍 Detail</button>
     `;
@@ -1396,7 +1390,6 @@ function renderRiwayatTransaksiFiltered() {
     return;
   }
 
-  // Cek apakah diakses dari mode barcode (hanya tombol print dan hapus, tanpa tombol edit)
   const isBarcodeMode = new URLSearchParams(window.location.search).get('mode') === 'kasir';
 
   let totalKeseluruhan = 0;
@@ -1419,7 +1412,6 @@ function renderRiwayatTransaksiFiltered() {
 
     totalKeseluruhan += t.total;
     
-    // Tombol aksi riwayat transaksi (hanya print dan hapus pada mode barcode)
     let actionButtonsHtml = `
       <button class="btn btn-secondary btn-sm" onclick="bukaModalCetakNota(${originalIndex})">🖨️ Cetak</button>
     `;
@@ -1525,7 +1517,6 @@ function hapusTransaksiTerpilih() {
   }
 }
 
-// Fungsi Text-to-Speech
 function speakSuccessMessage(namaBarang) {
   try {
     if ('speechSynthesis' in window) {
@@ -1792,7 +1783,6 @@ function hitungKembalianScanner() {
   document.getElementById('scannerKembalianDisplay').innerText = kembalian >= 0 ? `Rp ${formatNumber(kembalian)}` : `Rp 0`;
 }
 
-// Logika Pengalihan Halaman Sesuai Permintaan: Jika ada kasbon tampil di halaman kasbon, jika tidak ada langsung di halaman data transaksi
 function arahkanSetelahTransaksi(namaKasbon) {
   const cleanKasbon = namaKasbon ? namaKasbon.trim() : "";
   if (cleanKasbon !== "") {
@@ -1841,7 +1831,6 @@ function selesaikanTransaksiScanner() {
     return;
   }
 
-  // Sinkronisasi: kurangi stok barang di data barang
   keranjangScanner.forEach(item => {
     const b = barangList.find(x => x.kode === item.kode);
     if(b) {
@@ -1987,18 +1976,19 @@ function previewLiveBarcode() {
   }
 }
 
+// PERBAIKAN UTAMA: Mengambil dari Data Barang Keseluruhan (barangList)
 function populateBarangDatalist() {
   const datalist = document.getElementById('listPengeluaranBarang');
   if(!datalist) return;
   datalist.innerHTML = '';
-  pengeluaranList.forEach(p => { datalist.innerHTML += `<option value="${p.keterangan}"></option>`; });
+  barangList.forEach(b => { datalist.innerHTML += `<option value="${b.nama}">`; });
 }
 
 function onInputBarangNama(val) {
   const cleanVal = val.trim().toLowerCase();
-  const matched = pengeluaranList.find(p => p.keterangan.toLowerCase() === cleanVal);
+  const matched = barangList.find(b => b.nama.toLowerCase() === cleanVal);
   if(matched) {
-    document.getElementById('barKode').value = matched.barcode;
+    document.getElementById('barKode').value = matched.kode;
     document.getElementById('barHargaModal').value = matched.modal;
     document.getElementById('barHargaJual').value = matched.jual;
   } else {
@@ -2019,6 +2009,7 @@ function onKetikCariBarang() {
     return;
   }
 
+  // Mengambil langsung dari keseluruhan barangList stok
   const filtered = barangList.map((b, idx) => ({ ...b, originalIndex: idx })).filter(b => 
     b.nama.toLowerCase().includes(keyword) || b.kode.toLowerCase().includes(keyword)
   );
@@ -2247,7 +2238,6 @@ function prosesPembayaran() {
     }
   }
 
-  // Sinkronisasi stok: kurangi stok barang di data barang secara menyeluruh
   keranjangList.forEach(item => {
     const b = barangList.find(x => x.kode === item.kode);
     if(b) {
@@ -2339,83 +2329,6 @@ function resetKasirForm() {
   currentSelectedKasirBarcode = "";
   renderKeranjang();
 }
-
-function batalEditTransaksi() {
-  resetKasirForm();
-  showTab('transaksiTab');
-}
-
-function cetakDataTransaksiTerfilter() { window.print(); }
-
-function bukaModalCetakNota(idx) {
-  const t = transaksiList[idx];
-  let itemsHtml = '';
-  t.items.forEach(i => {
-    itemsHtml += `<tr><td colspan="2" style="padding-top: 4px;"><b>${i.nama}</b></td></tr>
-      <tr><td>${i.qty} PCS x ${formatNumber(i.hargaJual)}</td><td style="text-align: right;">${formatNumber(i.subtotal)}</td></tr>`;
-  });
-
-  let kasbonReceiptHtml = '';
-  if (t.namaKasbon && t.namaKasbon.trim() !== '') {
-    const isAllItemsLunas = t.items && t.items.length > 0 && t.items.every(i => i.isLunasItem);
-    const statusKasbon = (t.isLunasKasbon || isAllItemsLunas) ? 'LUNAS' : 'BELUM LUNAS';
-    const warnaStatus = (t.isLunasKasbon || isAllItemsLunas) ? '#16a34a' : '#dc2626';
-
-    let infoSisaKurang = '';
-    if (statusKasbon === 'BELUM LUNAS') {
-      let sisaTrx = 0;
-      if (t.items && Array.isArray(t.items)) {
-        t.items.forEach(item => {
-          if (!item.isLunasItem) sisaTrx += (parseFloat(item.subtotal) || 0);
-        });
-      } else {
-        sisaTrx = t.total;
-      }
-      infoSisaKurang = `<br><span>Sisa Piutang : Rp ${formatNumber(sisaTrx)}</span>`;
-    }
-
-    kasbonReceiptHtml = `
-      <div style="font-size: 0.75rem; margin-bottom: 5px; line-height: 1.5;">
-        <span>Kasbon : <b>${t.namaKasbon}</b></span><br>
-        <span>Status Kasbon : <b style="color: ${warnaStatus};">${statusKasbon}</b></span>
-        ${infoSisaKurang}
-      </div>
-    `;
-  }
-
-  let strukHtml = `
-    <div class="receipt-header">
-      <h4>${tokoProfile.nama}</h4>
-      <p>${tokoProfile.alamat}</p>
-      <p>Telp: ${tokoProfile.telp}</p>
-    </div>
-    <div class="receipt-divider"></div>
-    <div class="receipt-info" style="font-size: 0.75rem; margin-bottom: 5px;">
-      <span>Tgl : ${t.tanggal}</span><br><span>Kasir : admin</span><br><span>Struk : #${t.id || (idx + 1)}</span>
-    </div>
-    ${kasbonReceiptHtml}
-    <div class="receipt-divider"></div>
-    <table class="receipt-items-table"><tbody>${itemsHtml}</tbody></table>
-    <div class="receipt-divider"></div>
-    <div class="receipt-totals">
-      <div class="row"><span>TOTAL :</span> <b>Rp ${formatNumber(t.total)}</b></div>
-      <div class="row"><span>TUNAI :</span> <span>Rp ${formatNumber(t.bayar)}</span></div>
-      <div class="row"><span>KEMBALI :</span> <span>Rp ${formatNumber(t.kembalian)}</span></div>
-    </div>
-    <div class="receipt-divider"></div>
-    <div class="receipt-footer">
-      <p>${tokoProfile.notes}</p>
-      <p>LAYANAN KONSUMEN: ${tokoProfile.telp}</p>
-      <p style="margin-top: 5px;">Terima Kasih & Selamat Belanja Kembali</p>
-    </div>
-  `;
-
-  document.getElementById('printReceiptContent').innerHTML = strukHtml;
-  document.getElementById('printModalOverlay').classList.remove('hidden');
-}
-
-function closePrintModal() { document.getElementById('printModalOverlay').classList.add('hidden'); }
-function triggerWindowPrint() { window.print(); }
 
 function editTransaksi(idx) {
   const t = transaksiList[idx];
