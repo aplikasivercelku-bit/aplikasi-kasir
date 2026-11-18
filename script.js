@@ -152,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const isLocalStorageLoggedIn = localStorage.getItem('sembako_logged_in');
   const isKasirOnly = localStorage.getItem('sembako_kasir_only') === 'true';
 
-  // JIKA SUDAH LOGIN (DIPERTAHANKAN DI LOCALSTORAGE AGAR TIDAK BLANK SAAT REFRESH)
   if (isLocalStorageLoggedIn === 'true') {
     const loginPage = document.getElementById('loginPage');
     const appContainer = document.getElementById('appContainer');
@@ -677,7 +676,7 @@ function resetPengeluaranForm() {
   toggleForm('pengeluaranFormCard', 'pengeluaranToggleIcon');
 }
 
-// DATA BARANG & QR (SINKRONISASI BARANG, TRANSAKSI, & KASBON)
+// DATA BARANG & QR
 function toggleSelectAllBarang(source) {
   document.querySelectorAll('.barang-checkbox').forEach(cb => { cb.checked = source.checked; });
 }
@@ -2322,15 +2321,28 @@ function importDataApp() {
   if(!file) return alert("Pilih file backup (.json)!");
   const reader = new FileReader();
   reader.onload = function(e) {
-    const data = JSON.parse(e.target.result);
-    if(data.barangList) barangList = data.barangList;
-    if(data.pengeluaranList) pengeluaranList = data.pengeluuranList;
-    if(data.transaksiList) transaksiList = data.transaksiList;
-    if(data.kasbonList) kasbonList = data.kasbonList;
-    if(data.adminCreds) adminCreds = data.adminCreds;
-    if(data.tokoProfile) tokoProfile = data.tokoProfile;
-    saveDataToStorage(); loadProfilData(); renderBarangTable(); renderPengeluaranTable(); renderRiwayatTransaksi(); renderKasbonTable();
-    alert("Pemulihan data berhasil!");
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.barangList) barangList = data.barangList;
+      if(data.pengeluaranList) pengeluaranList = data.pengeluaranList; // Diperbaiki dari pengeluuranList
+      if(data.transaksiList) transaksiList = data.transaksiList;
+      if(data.kasbonList) kasbonList = data.kasbonList;
+      if(data.adminCreds) adminCreds = data.adminCreds;
+      if(data.tokoProfile) tokoProfile = data.tokoProfile;
+      
+      saveDataToStorage(); 
+      loadProfilData(); 
+      renderBarangTable(); 
+      renderPengeluaranTable(); // Memastikan tabel pengeluaran ikut dirender ulang
+      renderRiwayatTransaksi(); 
+      renderKasbonTable();
+      updateDashboardStats();
+      updateFinancialSummary();
+      
+      alert("Pemulihan data (import) berhasil! Seluruh data termasuk pengeluaran telah dimuat.");
+    } catch (err) {
+      alert("Gagal membaca file JSON: Format tidak valid.");
+    }
   };
   reader.readAsText(file);
 }
