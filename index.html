@@ -366,30 +366,40 @@
           <div class="kasir-grid">
             <div>
               <div class="form-group" style="position: relative; margin-bottom: 15px;">
-                <label>Cari / Ketik Nama Barang / Kode Barcode:</label>
+                <label><b>Cari / Ketik Nama Barang / Kode Barcode (Atau Scan):</b></label>
                 <input type="text" id="kasirBarangInput" class="form-control" placeholder="Ketik nama atau scan barcode barang..." oninput="onKetikCariBarang()" autocomplete="off">
                 <input type="hidden" id="selectedKasirBarangIndex">
                 <div id="autocompleteDropdown" class="autocomplete-box hidden"></div>
               </div>
 
+              <!-- KOTAK HIJAU INFORMASI BARANG DITEMUKAN (SEPERTI GAMBAR REFERENSI) -->
+              <div id="kasirInfoBarangDitemukan" class="hidden" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 6px; color: #16a34a; font-weight: bold; margin-bottom: 4px; font-size: 0.9rem;">
+                  <span>✅</span> <span id="infoStatusDitemukanText">Barang Ditemukan dari Data Barang:</span>
+                </div>
+                <div id="infoNamaDitemukan" style="font-size: 1.1rem; font-weight: bold; color: #1e293b; margin-bottom: 2px;">-</div>
+                <div id="infoDetailDitemukan" style="font-size: 0.85rem; color: #475569;">-</div>
+              </div>
+
               <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                <div class="form-group" style="flex: 1; min-width: 120px;">
-                  <label>Jumlah Beli:</label>
+                <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                  <label><b>Jumlah Beli:</b></label>
                   <input type="number" id="kasirQty" class="form-control" value="1" min="1">
                 </div>
                 <div style="align-self: flex-end;">
-                  <button type="button" class="btn btn-success" onclick="tambahItemKeranjang()" style="padding: 10px 20px;">➕ Tambah ke Keranjang</button>
+                  <button type="button" class="btn btn-success" onclick="tambahItemKeranjang()" style="padding: 10px 20px;">+ Tambah ke Keranjang</button>
                 </div>
               </div>
             </div>
 
-            <div class="kasir-barcode-preview-card">
-              <h4 style="font-size: 0.85rem; color: #475569; margin-bottom: 8px;">Barcode Barang Dipilih:</h4>
-              <div id="kasirBarcodePlaceholder" class="barcode-placeholder">Belum ada barang dipilih</div>
+            <!-- AREA VISUAL BARCODE BARANG DIPILIH -->
+            <div class="card" style="margin-top: 0; padding: 15px; border: 1px dashed #cbd5e1; background: #fafafa; text-align: center;">
+              <div style="font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px;">Barcode Barang Dipilih:</div>
+              <div id="kasirBarcodePlaceholder" style="color: #94a3b8; font-size: 0.9rem; padding: 20px 0; font-style: italic;">Belum ada barang dipilih</div>
               <div id="kasirBarcodePreviewArea" class="hidden">
-                <svg id="kasirBarcodeSvg" style="max-width: 180px; height: 50px;"></svg>
-                <div style="margin-top: 5px;">
-                  <button type="button" class="btn btn-secondary btn-sm" onclick="downloadKasirBarcodePNG()">📥 Unduh Barcode PNG</button>
+                <svg id="kasirBarcodeSvg" style="max-width: 100%; height: auto;"></svg>
+                <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="downloadKasirBarcodePNG()">📥 PNG Batang</button>
                 </div>
               </div>
             </div>
@@ -785,7 +795,7 @@
             <div><b>6. Transaksi Kasir:</b> Pilih barang, masukkan jumlah, dan selesaikan pembayaran atau catat kasbon/piutang.</div>
             <div><b>7. Scanner Barcode:</b> Gunakan kamera langsung, unggah gambar barcode, atau ketik/salin barcode secara manual.</div>
             <div><b>8. Data Transaksi & Laporan:</b> Lihat riwayat penjualan, cetak rekap, atau cetak nota struk thermal lengkap dengan status kasbon.</div>
-            <div><b>9. Profil & Toko:</b> Ubah informasi nama toko, alamat, telepon, logo perusahaan, serta foto profil admin melalui menu titik 3 di sudut kiri bawah.</div>
+            <div><b>9. Profil & Toko:</b> Ubah informasi nama toko, alamat, telepon, logo perusahaan, serta profil admin melalui menu titik 3 di sudut kiri bawah.</div>
           </div>
         </div>
       </section>
